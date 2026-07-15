@@ -74,7 +74,8 @@ class SkillResult:
 def find_scenario_files(base_dir: Path, skill: Optional[str] = None) -> list[Path]:
     """Find all scenario markdown files in the benchmark directory."""
     if skill is not None:
-        skill_dir = base_dir / "scenarios" / skill
+        scenario_dir_name = skill.removesuffix("-craft")
+        skill_dir = base_dir / "scenarios" / scenario_dir_name
         if not skill_dir.exists():
             return []
         return sorted(skill_dir.glob("scenario-*.md"))

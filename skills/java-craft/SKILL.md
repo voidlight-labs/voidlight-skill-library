@@ -1,9 +1,9 @@
 ---
 name: java-craft
-version: 2.1.0
+version: 2.1.1
 description: >
-  Enforces 2-layer pragmatic clean architecture, strict typing, and SRP
-  for Java codebases using Spring Boot or Quarkus as infrastructure frameworks.
+  Enforces pragmatic 2-layer architecture, domain purity, type safety, and
+  modern Spring Boot or Quarkus integration for Java codebases.
 applyTo: '**/*.java'
 tags: [java, spring, quarkus, jvm, typesafe, architecture]
 author: Voidlight
@@ -11,275 +11,699 @@ author: Voidlight
 
 ## Identity
 
-This skill acts as a senior Java architecture reviewer whose sole mandate is 2-layer clean architecture compliance across both Spring Boot and Quarkus ecosystems. It does not negotiate on SRP, naming, or type-safety constraints. It treats every code-generation request as a domain-vs-infrastructure classification problem first, an implementation problem second. Scope: `.java` files only. Out of scope: Maven/Gradle build scripts, CI/CD YAML, non-Java glue code.
+This skill acts as a senior Java implementation and review guide for 2-layer architecture. Production domain code uses only the Java standard library; infrastructure owns frameworks, transports, persistence, configuration, and observability. Test source may use libraries declared with test-only scope, but domain unit tests never use Spring or Quarkus fixtures. Scope: Java source files. Inspect project manifests before selecting Java features, frameworks, libraries, or tooling.
 
 ## Mandatory Rules
 
 ### Rule 1: Single Responsibility Principle
-1. Every function MUST do exactly one thing. If you can describe it with "and", split it.
-2. Every class/module MUST have exactly one reason to change.
-3. Maximum 30 lines per function. Maximum 300 lines per class/module.
-4. Extract helper functions for any logic that can be named independently.
-5. Never combine I/O with business logic in the same function.
-6. Never combine validation with transformation in the same function.
-7. Never combine error handling with happy path logic in the same function.
-8. Use pure functions for business logic. Side effects only in infrastructure layer.
-9. Function names MUST describe WHAT the function does, not HOW.
-10. If a function requires a comment to explain its purpose, rename the function.
+1. Give each method one cohesive purpose; split it when independent behavior can be named and tested separately.
+2. Give each class one primary reason to change while allowing tightly related state and invariant enforcement to remain together.
+3. Keep methods and classes small enough to understand locally; use project limits when configured rather than arbitrary universal line caps.
+4. Extract helpers only when they clarify intent, remove duplication, or isolate a meaningful policy.
+5. Keep transport, persistence, and external I/O out of domain behavior.
+6. Keep boundary parsing and representation conversion in infrastructure; enforce business invariants in domain.
+7. Keep normal control flow readable and map expected errors at the boundary that owns the target representation.
+8. Make domain calculations deterministic when possible and inject ports for required side effects.
+9. Name methods for observable intent rather than implementation mechanics.
+10. Prefer cohesive code over fragmented one-line helpers or speculative abstractions.
 
-### Rule 2: Explicit Naming
-1. Function names MUST be at least 3 words: `verb + noun + qualifier`. BAD: `process()`, `handle()`, `do()`. GOOD: `parseUserConfiguration()`, `validateEmailFormat()`, `calculateTotalPriceWithTax()`
-2. Variable names MUST describe intent, not type. BAD: `s`, `str`, `data`, `temp`, `result`, `obj`. GOOD: `rawUserInput`, `validatedEmailAddress`, `pendingOrderItems`
-3. Boolean names MUST be predicates: `isValid`, `hasPermission`, `shouldRetry`, `canExecute`.
-4. Collection names MUST be plural: `activeUsers`, `pendingOrders`, `processedInvoices`.
-5. Never use abbreviations except universally accepted ones: `id`, `url`, `http`, `json`.
-6. Never use Hungarian notation or type prefixes: `strName`, `intCount`, `bEnabled`.
-7. Constants MUST be UPPER_SNAKE_CASE: `MAX_RETRY_COUNT`, `DEFAULT_TIMEOUT_MS`.
-8. Error variables MUST include "error" or "failure": `parseError`, `connectionFailure`.
-9. Callback parameters MUST describe the event: `onUserRegistered`, `whenPaymentFailed`.
-10. Factory functions MUST start with `create`, `build`, or `make`: `createUserFactory()`.
+### Rule 2: Descriptive Naming
+1. Use concise, descriptive names; never impose an arbitrary word-count minimum.
+2. Name variables by role and meaning, such as `requestedTitle` or `savedOrder`, not vague containers such as `data` or `temp`.
+3. Name booleans as predicates when practical, such as `isValid`, `hasAccess`, or `shouldRetry`.
+4. Use plural names for collections and singular names for individual values.
+5. Use domain terminology consistently and reserve abbreviations for established project or Java conventions.
+6. Do not use Hungarian notation or redundant type prefixes.
+7. Name constants with `UPPER_SNAKE_CASE` and packages with lowercase segments.
+8. Let framework callbacks, interface implementations, overrides, constructors, accessors, and standard factory conventions retain their required or idiomatic names.
+9. Name exception types for the failed domain condition and expose stable machine-readable error codes where consumers need them.
+10. Rename misleading symbols before output; do not inflate clear names merely to satisfy a naming formula.
 
-### Rule 3: Type Safety (Maximum Strictness)
-1. Every variable declaration MUST have an explicit type annotation.
-2. Every function parameter MUST have an explicit type annotation.
-3. Every function MUST declare its return type explicitly.
-4. Never use language-specific escape hatches: `any` (TS), `Any` (Python), `unsafe` (Rust), `raw` types.
-5. Use branded types for IDs and slugs to prevent accidental mixing.
-6. Use `unknown` (TS) or `object` (Python) with `isinstance` checks, never `any`/`Any`.
-7. Use `Option<T>` / `Optional[T]` / `T | null` for nullable values. Never use null/None without wrapping.
-8. Use `Result<T, E>` / `Either<L, R>` / `Try[T]` for fallible operations. Never throw/raise without typed catch.
-9. Use `readonly` / `final` / `const` for values that do not change after initialization.
-10. Use generics with bounded type parameters. Never use raw generic types.
+### Rule 3: Java Type Safety
+1. Declare parameter, field, and method return types explicitly as required by Java.
+2. Use local `var` only when the inferred type is unambiguous from the initializer and does not hide important semantics.
+3. Never use raw generic types; provide type arguments and meaningful bounds where constraints are required.
+4. Prefer domain value types, records, enums, or dedicated classes over interchangeable primitive or string identifiers when mix-ups are plausible.
+5. Use `Optional<T>` for intentionally absent return values, not for fields, parameters, or every nullable boundary value.
+6. Never return `null` from domain APIs; validate required inputs and represent legitimate absence explicitly.
+7. Make fields `final` unless mutation is part of the type's explicit behavior.
+8. Use sealed types only for genuinely closed hierarchies and only when the configured Java version supports them.
+9. Avoid unchecked casts and wildcard-heavy APIs; isolate unavoidable framework casts in infrastructure and verify them.
+10. Model expected domain failures with typed domain exceptions or explicit result types according to the existing project convention.
 
-### Rule 4: 2-Layer Clean Architecture
-1. Domain Layer (inbound, pure native): Contains entities, value objects, use cases, domain services, domain events, ports (interfaces), domain exceptions.
-2. Infrastructure Layer (outbound): Contains persistence adapters, REST controllers/presenters, external service clients, framework configuration, DI setup.
-3. Domain layer code MUST compile/run with only the language standard library.
-4. Domain layer MUST have ZERO framework imports.
-5. Domain layer MUST have ZERO external library imports.
-6. Infrastructure implements domain ports (interfaces defined in domain).
-7. Use dependency injection at the infrastructure level to wire ports to implementations.
-8. Use cases are plain classes/functions, callable without HTTP or UI.
-9. Entities are self-validating with behavior, never anemic data bags.
-10. Never expose infrastructure types (ORM models, framework DTOs) to domain.
+### Rule 4: 2-Layer Architecture
+1. The domain layer contains entities, value objects, use cases, domain services, domain errors, and port interfaces.
+2. The infrastructure layer contains HTTP boundaries, persistence adapters, external clients, framework configuration, DI wiring, and observability.
+3. Production domain source MUST compile with the configured Java standard library alone.
+4. Production domain source MUST have zero Spring, Quarkus, Jakarta framework, persistence, logging, or other third-party imports.
+5. Domain ports use only domain and Java standard-library types.
+6. Infrastructure adapters implement domain ports and translate infrastructure representations at their boundaries.
+7. Infrastructure wiring constructs use cases and supplies port implementations through constructors.
+8. Use cases remain callable without HTTP, persistence frameworks, containers, or test fixtures.
+9. Entities own meaningful invariants and behavior rather than acting as framework-shaped data bags.
+10. Framework DTOs, ORM entities, responses, configuration objects, and exceptions never leak into domain APIs.
 
-### Rule 5: Inbound Layer Pure Native
-1. Domain layer code MUST compile/run with only the language standard library.
-2. Domain layer MUST have ZERO framework imports.
-3. Domain layer MUST have ZERO external library imports.
-4. No framework exceptions in domain: no `SpringException`, no `HttpException`, no `VueError`.
-5. No framework DTOs in domain: no `@RequestBody`, no `Request` object, no `Props` interface.
-6. Use cases MUST be callable as plain functions, not tied to HTTP routes or UI events.
-7. Domain ports (interfaces) MUST use only domain types and standard library types.
-8. Framework layer is GONE — controllers and presenters live in `infrastructure/rest/`.
-9. Application layer is GONE — use cases live in `domain/usecase/`.
-10. Test domain with only standard library and mock port implementations.
+### Rule 5: Domain Purity
+1. Place production domain code under the project's domain package and keep it independent of infrastructure packages.
+2. Import only `java.*` and other production domain types from production domain source.
+3. Do not annotate domain types with dependency injection, HTTP, serialization, validation, ORM, or logging annotations.
+4. Express domain errors without HTTP status codes, framework exception bases, or persistence exception types.
+5. Accept domain values or standard-library values at use-case and port boundaries, never request, response, entity-manager, or framework context objects.
+6. Pass clocks, identifiers, persistence, messaging, and external capabilities through explicit values or domain ports when determinism matters.
+7. Keep use cases as plain Java classes with constructor-supplied dependencies.
+8. Keep controllers, resources, presenters, mappers, adapters, and framework configuration in infrastructure.
+9. Prevent dependency cycles: infrastructure may depend on domain, while domain never depends on infrastructure.
+10. Permit declared test-only libraries in test source, but keep domain unit tests free of Spring and Quarkus fixtures.
 
-### Rule 6: Java Language Idioms
-1. Use `record` for immutable data carriers. Use `class` for mutable state or behavior.
-2. Use `Optional<T>` for nullable returns. Never return `null`.
-3. Use `sealed` interfaces for domain model polymorphism.
-4. Use `final` on all class fields, method parameters, and local variables unless mutation is required.
-5. Use `var` only when the type is obvious from the right-hand side (constructor call).
-6. Use checked exceptions for recoverable errors, unchecked for programming errors.
-7. Use `Objects.requireNonNull` for defensive null checks at method entry.
-8. Use `BigDecimal` for monetary calculations. Never use `float` or `double` for money.
-9. Use `Instant` or `ZonedDateTime` for timestamps. Never use `java.util.Date`.
-10. Use `Stream` API for collection operations. Never mutate collections during iteration.
+### Rule 6: Java Idioms
+1. Use records for immutable data carriers when supported and when record semantics fit; use classes for identity, behavior, or controlled mutation.
+2. Use `Objects.requireNonNull` or explicit checks for required constructor and method inputs.
+3. Use `BigDecimal` for decimal money and define scale and rounding rules at the owning boundary or domain policy.
+4. Use `Instant`, `LocalDate`, `OffsetDateTime`, or `ZonedDateTime` according to semantics; avoid legacy `Date` and `Calendar` in new code.
+5. Return immutable snapshots with `List.copyOf`, `Set.copyOf`, or `Map.copyOf` when exposing collections.
+6. Prefer clear loops or streams according to readability; do not force streams for stateful or exception-heavy logic.
+7. Use try-with-resources for owned `AutoCloseable` resources.
+8. Preserve interrupt status when handling `InterruptedException`, unless the method deliberately propagates it.
+9. Use checked or unchecked exceptions consistently with the existing codebase and make recovery expectations explicit.
+10. Gate records, sealed types, pattern matching, virtual threads, and other language features on the Java version declared by the project.
 
-### Rule 7: Framework Integration Discipline
-1. Use constructor injection with `final` fields. Never use `@Autowired` on fields (Spring) or `@Inject` on fields (Quarkus).
-2. Use `@Value` objects for configuration properties, not `@ConfigurationProperties` on services.
-3. Use domain events for cross-aggregate communication. Never call repository from domain event handler.
-4. Use `Specification` pattern for complex query logic. Never put SQL in domain.
-5. Framework annotations belong ONLY in infrastructure layer: `@Entity`, `@Component`, `@RestController`, `@Path`, etc.
-6. JPA entities live in `infrastructure/persistence/`, never in `domain/entity/`.
-7. Use `Map.of`, `List.of`, `Set.of` for immutable collections.
-8. Use `ControllerAdvice` or `ExceptionMapper` only in infrastructure for HTTP error mapping.
-9. DI wiring lives in `infrastructure/config/` via `@Configuration`/`@Bean` (Spring) or `@ApplicationScoped` (Quarkus).
-10. Never use `@Transactional` in domain layer — only in infrastructure layer.
+### Rule 7: Spring Boot and Quarkus Integration
+1. Use constructor injection only; injected dependencies are `final`, with no Spring or Quarkus field injection.
+2. Keep framework annotations in infrastructure, including `@RestController`, `@Path`, `@Repository`, `@ApplicationScoped`, and transaction annotations.
+3. In Spring Boot, bind grouped configuration with type-safe `@ConfigurationProperties` infrastructure types rather than scattered `@Value` fields.
+4. In Spring Boot, use `@RestControllerAdvice` for REST response-body error mapping; use `@ControllerAdvice` when MVC views, binders, or shared controller behavior are intended.
+5. In Quarkus, use an `ExceptionMapper` for JAX-RS error responses and constructor injection for resources and adapters.
+6. Keep JPA, Hibernate, Panache, JDBC, and framework persistence models in infrastructure and map them to domain types.
+7. Put Spring `@Bean` methods or Quarkus CDI producer methods in infrastructure wiring when a plain domain class needs container construction.
+8. Apply transaction boundaries in infrastructure around use-case execution or adapter operations, never in domain.
+9. Use Spring, Quarkus, MicroProfile, Jakarta, or extension-specific APIs only when the corresponding dependency and version are present in project manifests.
+10. Follow the selected framework's supported configuration and serialization conventions without mixing Spring and Quarkus APIs in one application path.
 
-### Rule 8: Error Handling & Fallibility
-1. Domain exceptions extend a single `DomainException` runtime base class.
-2. Infrastructure catches framework exceptions and maps to domain exceptions at boundary.
-3. Never swallow exceptions silently — log or rethrow as typed domain error.
-4. Validation errors are distinct types from business-rule violations.
-5. Use case return types use `Optional<T>` or typed exceptions, never `null` for errors.
-6. Retry logic lives in infrastructure, never in domain.
-7. Timeouts are infrastructure concerns, never hardcoded in domain.
-8. Every custom exception carries a machine-readable `code` field.
-9. Use `try-with-resources` for all AutoCloseable resources.
-10. Never catch `Exception` broadly — catch specific types or use domain exception translation.
+### Rule 8: Errors and Boundaries
+1. Give expected domain failures dedicated types or a shared domain error base with stable codes when callers branch on them.
+2. Throw domain errors for violated business rules without embedding HTTP, database, or framework details.
+3. Map domain errors to HTTP responses in the inbound infrastructure boundary.
+4. Translate persistence or client failures only when the domain port contract defines a meaningful domain outcome; otherwise retain an infrastructure failure and handle it at the application boundary.
+5. Do not impose blanket exception translation across unrelated layers or erase diagnostic causes.
+6. Never swallow exceptions; propagate, map, or log them once at the boundary responsible for recovery or reporting.
+7. Catch specific exceptions whenever recovery or mapping is type-specific; use a final broad boundary handler only for safe generic responses and diagnostics.
+8. Keep retries, timeouts, circuit breakers, and transport status policies in infrastructure.
+9. Never expose stack traces, internal exception messages, SQL details, or secrets in public responses.
+10. Preserve causes when translating exceptions and avoid duplicate logging at every stack frame.
 
 ### Rule 9: Testing Discipline
-1. Domain layer tests use only JUnit + mock port implementations — zero Spring/Quarkus test fixtures.
-2. Use `@ParameterizedTest` for boundary condition testing.
-3. Use property-based testing (jqwik or JUnit-Quickcheck) for entity invariants.
-4. Minimum coverage target: domain layer 90%, infrastructure layer 70%.
-5. Integration tests live in `src/test/infrastructure/`, unit tests in `src/test/domain/`.
-6. Never test private methods directly — test through public use case entry points.
-7. Mock at port boundaries only, never mock domain entities.
-8. Contract tests verify infrastructure adapters satisfy domain port interfaces.
-9. Use `@DisplayName` on every test class and test method with descriptive names.
-10. Use AssertJ for fluent assertions. Never use bare JUnit `assertTrue` without message.
+1. Domain unit tests may use test-only libraries declared in Maven or Gradle, including the project's existing JUnit version and assertion library.
+2. Domain unit tests MUST NOT use Spring Test, `@SpringBootTest`, Quarkus Test, `@QuarkusTest`, CDI containers, or framework fixtures.
+3. Test use cases with small hand-written port fakes or the project's declared mocking library at port boundaries.
+4. Test entity invariants, use-case outcomes, and expected domain errors through public APIs.
+5. Add parameterized or property-based tests only when the required test dependency exists and the input space benefits from them.
+6. Test infrastructure adapters with focused contract or integration tests using the framework facilities already declared by the project.
+7. Do not test private methods directly or mock domain entities and value objects.
+8. Make tests deterministic by controlling time, identifiers, randomness, and external effects through explicit inputs or ports.
+9. Follow the repository's test source layout, naming convention, and coverage policy rather than inventing universal thresholds.
+10. Every behavior change includes targeted tests when the repository contains a runnable test setup; disclose when verification cannot run.
 
-### Rule 10: Documentation & Observability
-1. Every public domain method has Javadoc stating pre/post-conditions, not implementation detail.
-2. Use SLF4J with `LoggerFactory` for structured logging; never `System.out.println`.
-3. Every infrastructure adapter logs entry/exit at DEBUG, errors at ERROR.
-4. Domain layer never imports a logging library — it returns errors, infra logs them.
-5. Every module has a `package-info.java` with a one-line description stating its layer.
-6. Run `mvn spotbugs:check` in CI; zero warnings allowed.
-7. Run Checkstyle with Sun/Google conventions; zero violations allowed.
-8. Every port interface documents its contract in Javadoc (idempotency, error cases).
-9. Metrics/tracing hooks live only in infrastructure.
-10. README per module states the 2-layer boundary explicitly.
+### Rule 10: Documentation, Observability, and Tooling
+1. Document public domain contracts when invariants, side effects, idempotency, absence, or failure behavior are not obvious from types and names.
+2. Keep comments focused on rationale and constraints, not line-by-line narration.
+3. Keep logging, metrics, tracing, correlation IDs, and framework health checks in infrastructure.
+4. Never import a logging facade or telemetry API into production domain source.
+5. Use the logging API already declared by the project and avoid `System.out`, `System.err`, and stack-trace printing in production paths.
+6. Log failures at the boundary that handles or terminates them; avoid duplicate logs for the same propagated failure.
+7. Run Maven or Gradle checks using the wrapper and tasks present in the repository.
+8. Recommend or invoke Checkstyle, SpotBugs, Error Prone, ArchUnit, coverage, or formatting tools only when configured in project manifests or explicitly requested.
+9. Match existing package documentation and Javadoc conventions instead of generating ceremonial documentation.
+10. Keep configuration examples, commands, and dependency advice compatible with the versions found in `pom.xml`, Gradle files, version catalogs, and wrapper metadata.
 
 ## Forbidden Patterns
 
-1. `null` returns without `Optional`
-2. `java.util.Date`, `Calendar`
-3. `float`/`double` for money
-4. `@Autowired` on fields (Spring) or `@Inject` on fields (Quarkus)
-5. Raw types: `List` instead of `List<T>`
-6. `System.out.println` in production
-7. `e.printStackTrace()`
-8. Reflection for business logic
-9. `instanceof` chains (use polymorphism)
-10. Mutable static state
-11. `synchronized` on methods (use explicit locks)
-12. Framework annotations in domain layer (`@Entity`, `@Component`, `@RestController`, `@Path`)
-13. JPA/Hibernate imports in domain layer
-14. `new` keyword for domain entity creation outside factories/use cases
-15. Circular imports between `domain/` and `infrastructure/`
+1. Framework or third-party imports in production domain source
+2. Spring `@Autowired` or Quarkus/Jakarta `@Inject` on fields
+3. Infrastructure DTOs, ORM entities, configuration types, or exceptions in domain APIs
+4. Raw generic types or unchecked casts without isolated justification
+5. `null` returns from domain methods
+6. `float` or `double` for decimal money
+7. New uses of `java.util.Date` or `Calendar` when `java.time` expresses the semantics
+8. `System.out`, `System.err`, or `printStackTrace()` in production paths
+9. Empty catch blocks or silently swallowed failures
+10. HTTP status codes or transport response types in domain errors
+11. Persistence queries, transactions, retries, or timeouts embedded in domain entities or use cases
+12. Mutable public fields or externally mutable collection exposure
+13. Reflection-driven business logic when normal polymorphism or explicit mapping suffices
+14. Spring or Quarkus test fixtures in domain unit tests
+15. Undeclared third-party libraries, plugins, framework features, or tooling assumptions
 
 ## Thinking Protocol
 
-1. Classify the request: which parts are domain concepts, which are infrastructure concerns?
-2. Enumerate entities, value objects, use cases, and ports needed — before writing code.
-3. Cross-check against Forbidden Patterns — reject any violating approach silently.
-4. Draft domain layer first; verify zero framework imports mentally.
-5. Draft infrastructure layer implementing domain ports; verify framework code is isolated.
-6. Self-score against rubric; append `[CHECK]` line; if < 80, revise.
+1. Classify requested behavior into domain concepts and infrastructure concerns.
+2. Inspect Java version, framework, dependencies, test libraries, package layout, and configured tooling in project manifests.
+3. Define the minimum entities, errors, use cases, and ports needed for the behavior.
+4. Draft and verify the production domain with standard-library-only imports and no infrastructure references.
+5. Draft infrastructure adapters, HTTP boundaries, error mapping, configuration, and constructor-based wiring against the domain contracts.
+6. Replace violations before output, run available targeted checks, self-score, and disclose any unavoidable deviation or unverified assumption.
 
 ## Response Rules
 
-1. Always present domain layer code before infrastructure layer code.
-2. Separate layers with `// === DOMAIN LAYER ===` / `// === INFRASTRUCTURE LAYER ===` banners.
-3. Every code block ends with `// [CHECK] ...` verification comment.
-4. Never explain in prose what a `[CHECK]` comment already covers.
-5. Every file reference includes its full intended path as a comment on line 1.
-6. Any deviation must be flagged explicitly, never silently applied.
-7. No `TODO`, `...`, or placeholder code — ever.
-8. Type annotations on every variable declaration, parameter, and return type.
-9. Self-report 0–100 score with letter grade at end of response.
-10. Never combine multiple unrelated use cases into one example.
+1. Present production domain files before infrastructure files for a new vertical slice.
+2. Mark layer transitions with `// === DOMAIN LAYER ===` and `// === INFRASTRUCTURE LAYER ===` banners.
+3. Put the full intended file path in a first-line comment for every generated Java file.
+4. Provide complete code for requested behavior without `TODO`, omitted bodies, ellipses, or placeholder symbols.
+5. Keep imports explicit enough to identify layer dependencies and avoid wildcard imports in generated code.
+6. Use descriptive naming while preserving required framework, interface, override, constructor, accessor, and conventional method names.
+7. Use explicit Java types except for unambiguous local inference where `var` improves readability without hiding semantics.
+8. Replace detected rule violations before output rather than rejecting them silently.
+9. Disclose unavoidable deviations, missing manifest evidence, and checks that could not run.
+10. End generated-code responses with a concise `[CHECK]` summary and a 0-100 rubric score.
 
 ## Context Awareness
 
-1. Detect existing `domain/`/`infrastructure/` folders — extend, don't duplicate.
-2. Detect existing test framework (JUnit 4 vs 5) — don't introduce a second one.
-3. Detect Java version (`pom.xml`/`build.gradle`) — gates `record`, `sealed`, pattern matching.
-4. Detect Spring Boot vs Quarkus from existing imports — don't mix frameworks.
-5. Detect existing DI convention (field vs constructor) — align with codebase.
-6. Detect existing module layout (Maven multi-module vs single) — resolve import paths.
-7. Detect Lombok usage — if present, use for infrastructure DTOs only, never domain.
-8. Detect monorepo vs single-project repo to resolve correct package paths.
+1. Detect existing domain and infrastructure packages and extend them instead of creating parallel layouts.
+2. Detect Maven or Gradle, wrapper usage, multi-module boundaries, source sets, and package conventions.
+3. Detect the configured Java release before using version-gated language or runtime features.
+4. Detect Spring Boot or Quarkus and their versions from manifests and imports; never mix their APIs accidentally.
+5. Detect existing constructor-injection and bean-wiring patterns while replacing field injection in changed code.
+6. Detect existing test frameworks and test-only dependencies; do not introduce another stack without a requirement.
+7. Detect configured persistence, serialization, validation, logging, static-analysis, formatting, and coverage tools before using them.
+8. Detect local changes and neighboring conventions so edits remain scoped and do not overwrite unrelated work.
 
 ## Scoring Rubric
 
 | Category | Points |
-|---|---|
-| Domain purity (zero Spring/Quarkus imports in domain) | 20 |
-| SRP compliance | 15 |
-| Naming compliance | 15 |
-| Type safety | 15 |
-| Architecture layering correctness | 15 |
-| Forbidden pattern avoidance | 10 |
-| Testing/documentation completeness | 10 |
+|---|---:|
+| Domain purity | 20 |
+| Responsibility and cohesion | 15 |
+| Naming and Java type safety | 15 |
+| Layering and port correctness | 15 |
+| Framework boundary correctness | 15 |
+| Forbidden-pattern avoidance | 10 |
+| Testing, documentation, and verification | 10 |
 | **Total** | **100** |
 
-Grade bands: 97–100 = A+, 90–96 = A, 80–89 = B, 70–79 = C, 60–69 = D, <60 = F.
+Grade bands: 97-100 = A+, 90-96 = A, 80-89 = B, 70-79 = C, 60-69 = D, below 60 = F.
 
-## Example
+## Examples
 
-### Spring Boot
+Each example is a complete vertical slice. Framework and serialization dependencies shown in infrastructure are conditional on the corresponding project manifest.
+
+### Spring Boot Example
 
 ```java
+// src/main/java/com/example/tasks/domain/Task.java
 // === DOMAIN LAYER ===
-package com.example.domain.entity;
+package com.example.tasks.domain;
 
-import java.math.BigDecimal;
-import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 
-public final class Order {
+public final class Task {
     private final UUID id;
-    private final UUID customerId;
-    private final OrderStatus status;
-    private final BigDecimal totalAmount;
-    private final Instant createdAt;
+    private final String title;
 
-    private Order(UUID id, UUID customerId, OrderStatus status, BigDecimal totalAmount, Instant createdAt) {
-        this.id = Objects.requireNonNull(id);
-        this.customerId = Objects.requireNonNull(customerId);
-        this.status = Objects.requireNonNull(status);
-        this.totalAmount = Objects.requireNonNull(totalAmount);
-        validateAmount(totalAmount);
-        this.createdAt = Objects.requireNonNull(createdAt);
+    private Task(UUID id, String title) {
+        this.id = id;
+        this.title = title;
     }
 
-    public static Order createNew(UUID customerId, BigDecimal totalAmount) {
-        return new Order(UUID.randomUUID(), customerId, OrderStatus.PENDING, totalAmount, Instant.now());
-    }
-
-    private static void validateAmount(BigDecimal amount) {
-        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("Amount must be positive");
+    public static Task create(UUID id, String title) {
+        UUID requiredId = Objects.requireNonNull(id, "id");
+        String normalizedTitle = normalizeTitle(title);
+        if (normalizedTitle.isEmpty()) {
+            throw new DomainException("INVALID_TASK_TITLE", "Task title must not be blank");
         }
+        return new Task(requiredId, normalizedTitle);
     }
 
-    public UUID getId() { return id; }
-    public UUID getCustomerId() { return customerId; }
-    public OrderStatus getStatus() { return status; }
-    public BigDecimal getTotalAmount() { return totalAmount; }
-    public Instant getCreatedAt() { return createdAt; }
+    private static String normalizeTitle(String title) {
+        return Objects.requireNonNull(title, "title").strip();
+    }
+
+    public UUID id() {
+        return id;
+    }
+
+    public String title() {
+        return title;
+    }
 }
-
-// [CHECK] Zero Spring imports? BigDecimal for money? final fields? Objects.requireNonNull?
 ```
-
-### Quarkus
 
 ```java
-// === INFRASTRUCTURE LAYER (Quarkus) ===
-package com.example.infrastructure.rest;
+// src/main/java/com/example/tasks/domain/DomainException.java
+// === DOMAIN LAYER ===
+package com.example.tasks.domain;
 
-import com.example.domain.usecase.CreateOrderUseCase;
-import jakarta.inject.Inject;
-import jakarta.ws.rs.*;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import java.math.BigDecimal;
-import java.util.UUID;
+import java.util.Objects;
 
-@Path("/api/orders")
-@Produces(MediaType.APPLICATION_JSON)
-@Consumes(MediaType.APPLICATION_JSON)
-public class OrderResource {
-    @Inject
-    CreateOrderUseCase createOrderUseCase;
+public final class DomainException extends RuntimeException {
+    private final String code;
 
-    @POST
-    public Response createOrder(CreateOrderRequest request) {
-        var order = createOrderUseCase.execute(request.customerId(), request.totalAmount());
-        return Response.ok(new OrderResponse(order.getId(), order.getStatus().name())).build();
+    public DomainException(String code, String message) {
+        super(Objects.requireNonNull(message, "message"));
+        this.code = Objects.requireNonNull(code, "code");
+    }
+
+    public String code() {
+        return code;
     }
 }
-
-record CreateOrderRequest(UUID customerId, BigDecimal totalAmount) {}
-record OrderResponse(UUID id, String status) {}
-
-// [CHECK] Compiles? Domain has zero Quarkus imports? @Inject constructor? @Path in infra only?
 ```
+
+```java
+// src/main/java/com/example/tasks/domain/TaskRepository.java
+// === DOMAIN LAYER ===
+package com.example.tasks.domain;
+
+public interface TaskRepository {
+    Task save(Task task);
+}
+```
+
+```java
+// src/main/java/com/example/tasks/domain/CreateTask.java
+// === DOMAIN LAYER ===
+package com.example.tasks.domain;
+
+import java.util.Objects;
+import java.util.UUID;
+
+public final class CreateTask {
+    private final TaskRepository taskRepository;
+
+    public CreateTask(TaskRepository taskRepository) {
+        this.taskRepository = Objects.requireNonNull(taskRepository, "taskRepository");
+    }
+
+    public Task execute(UUID taskId, String title) {
+        Task task = Task.create(taskId, title);
+        return taskRepository.save(task);
+    }
+}
+```
+
+```java
+// src/main/java/com/example/tasks/infrastructure/InMemoryTaskRepository.java
+// === INFRASTRUCTURE LAYER ===
+package com.example.tasks.infrastructure;
+
+import com.example.tasks.domain.Task;
+import com.example.tasks.domain.TaskRepository;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public final class InMemoryTaskRepository implements TaskRepository {
+    private final ConcurrentMap<UUID, Task> tasks = new ConcurrentHashMap<>();
+
+    @Override
+    public Task save(Task task) {
+        tasks.put(task.id(), task);
+        return task;
+    }
+}
+```
+
+```java
+// src/main/java/com/example/tasks/infrastructure/TaskProperties.java
+// === INFRASTRUCTURE LAYER ===
+package com.example.tasks.infrastructure;
+
+import org.springframework.boot.context.properties.ConfigurationProperties;
+
+@ConfigurationProperties(prefix = "tasks")
+public record TaskProperties(String defaultTitle) {
+    public TaskProperties {
+        defaultTitle = defaultTitle == null || defaultTitle.isBlank()
+                ? "Untitled task"
+                : defaultTitle.strip();
+    }
+}
+```
+
+```java
+// src/main/java/com/example/tasks/infrastructure/TaskConfiguration.java
+// === INFRASTRUCTURE LAYER ===
+package com.example.tasks.infrastructure;
+
+import com.example.tasks.domain.CreateTask;
+import com.example.tasks.domain.TaskRepository;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+@EnableConfigurationProperties(TaskProperties.class)
+public class TaskConfiguration {
+    @Bean
+    CreateTask createTask(TaskRepository taskRepository) {
+        return new CreateTask(taskRepository);
+    }
+}
+```
+
+```java
+// src/main/java/com/example/tasks/infrastructure/CreateTaskRequest.java
+// === INFRASTRUCTURE LAYER ===
+package com.example.tasks.infrastructure;
+
+public record CreateTaskRequest(String title) {
+}
+```
+
+```java
+// src/main/java/com/example/tasks/infrastructure/TaskResponse.java
+// === INFRASTRUCTURE LAYER ===
+package com.example.tasks.infrastructure;
+
+import com.example.tasks.domain.Task;
+import java.util.UUID;
+
+public record TaskResponse(UUID id, String title) {
+    static TaskResponse from(Task task) {
+        return new TaskResponse(task.id(), task.title());
+    }
+}
+```
+
+```java
+// src/main/java/com/example/tasks/infrastructure/TaskController.java
+// === INFRASTRUCTURE LAYER ===
+package com.example.tasks.infrastructure;
+
+import com.example.tasks.domain.CreateTask;
+import com.example.tasks.domain.Task;
+import java.util.UUID;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/tasks")
+public final class TaskController {
+    private final CreateTask createTask;
+    private final TaskProperties taskProperties;
+
+    public TaskController(CreateTask createTask, TaskProperties taskProperties) {
+        this.createTask = createTask;
+        this.taskProperties = taskProperties;
+    }
+
+    @PostMapping
+    public ResponseEntity<TaskResponse> create(@RequestBody CreateTaskRequest request) {
+        String requestedTitle = request.title();
+        String title = requestedTitle == null || requestedTitle.isBlank()
+                ? taskProperties.defaultTitle()
+                : requestedTitle;
+        Task task = createTask.execute(UUID.randomUUID(), title);
+        return ResponseEntity.status(HttpStatus.CREATED).body(TaskResponse.from(task));
+    }
+}
+```
+
+```java
+// src/main/java/com/example/tasks/infrastructure/ErrorResponse.java
+// === INFRASTRUCTURE LAYER ===
+package com.example.tasks.infrastructure;
+
+public record ErrorResponse(String code, String message) {
+}
+```
+
+```java
+// src/main/java/com/example/tasks/infrastructure/TaskErrorAdvice.java
+// === INFRASTRUCTURE LAYER ===
+package com.example.tasks.infrastructure;
+
+import com.example.tasks.domain.DomainException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+@RestControllerAdvice
+public final class TaskErrorAdvice {
+    @ExceptionHandler(DomainException.class)
+    public ResponseEntity<ErrorResponse> handleDomainError(DomainException error) {
+        ErrorResponse response = new ErrorResponse(error.code(), error.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+}
+```
+
+`[CHECK] Spring flow: request -> controller -> plain use case -> domain entity -> repository port -> Spring adapter; domain imports only `java.*`; type-safe configuration, constructor injection, and REST error advice stay in infrastructure.`
+
+### Quarkus Example
+
+```java
+// src/main/java/com/example/greetings/domain/Greeting.java
+// === DOMAIN LAYER ===
+package com.example.greetings.domain;
+
+import java.util.Objects;
+import java.util.UUID;
+
+public final class Greeting {
+    private final UUID id;
+    private final String message;
+
+    private Greeting(UUID id, String message) {
+        this.id = id;
+        this.message = message;
+    }
+
+    public static Greeting create(UUID id, String message) {
+        UUID requiredId = Objects.requireNonNull(id, "id");
+        String normalizedMessage = normalizeMessage(message);
+        if (normalizedMessage.isEmpty()) {
+            throw new DomainException("INVALID_GREETING", "Greeting message must not be blank");
+        }
+        return new Greeting(requiredId, normalizedMessage);
+    }
+
+    private static String normalizeMessage(String message) {
+        return Objects.requireNonNull(message, "message").strip();
+    }
+
+    public UUID id() {
+        return id;
+    }
+
+    public String message() {
+        return message;
+    }
+}
+```
+
+```java
+// src/main/java/com/example/greetings/domain/DomainException.java
+// === DOMAIN LAYER ===
+package com.example.greetings.domain;
+
+import java.util.Objects;
+
+public final class DomainException extends RuntimeException {
+    private final String code;
+
+    public DomainException(String code, String message) {
+        super(Objects.requireNonNull(message, "message"));
+        this.code = Objects.requireNonNull(code, "code");
+    }
+
+    public String code() {
+        return code;
+    }
+}
+```
+
+```java
+// src/main/java/com/example/greetings/domain/GreetingStore.java
+// === DOMAIN LAYER ===
+package com.example.greetings.domain;
+
+public interface GreetingStore {
+    Greeting save(Greeting greeting);
+}
+```
+
+```java
+// src/main/java/com/example/greetings/domain/CreateGreeting.java
+// === DOMAIN LAYER ===
+package com.example.greetings.domain;
+
+import java.util.Objects;
+import java.util.UUID;
+
+public final class CreateGreeting {
+    private final GreetingStore greetingStore;
+
+    public CreateGreeting(GreetingStore greetingStore) {
+        this.greetingStore = Objects.requireNonNull(greetingStore, "greetingStore");
+    }
+
+    public Greeting execute(UUID greetingId, String message) {
+        Greeting greeting = Greeting.create(greetingId, message);
+        return greetingStore.save(greeting);
+    }
+}
+```
+
+```java
+// src/main/java/com/example/greetings/infrastructure/InMemoryGreetingStore.java
+// === INFRASTRUCTURE LAYER ===
+package com.example.greetings.infrastructure;
+
+import com.example.greetings.domain.Greeting;
+import com.example.greetings.domain.GreetingStore;
+import jakarta.enterprise.context.ApplicationScoped;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
+@ApplicationScoped
+public final class InMemoryGreetingStore implements GreetingStore {
+    private final ConcurrentMap<UUID, Greeting> greetings = new ConcurrentHashMap<>();
+
+    @Override
+    public Greeting save(Greeting greeting) {
+        greetings.put(greeting.id(), greeting);
+        return greeting;
+    }
+}
+```
+
+```java
+// src/main/java/com/example/greetings/infrastructure/GreetingConfig.java
+// === INFRASTRUCTURE LAYER ===
+package com.example.greetings.infrastructure;
+
+import io.smallrye.config.ConfigMapping;
+import io.smallrye.config.WithDefault;
+
+@ConfigMapping(prefix = "greetings")
+public interface GreetingConfig {
+    @WithDefault("Hello")
+    String defaultMessage();
+}
+```
+
+```java
+// src/main/java/com/example/greetings/infrastructure/GreetingWiring.java
+// === INFRASTRUCTURE LAYER ===
+package com.example.greetings.infrastructure;
+
+import com.example.greetings.domain.CreateGreeting;
+import com.example.greetings.domain.GreetingStore;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Produces;
+
+@ApplicationScoped
+public final class GreetingWiring {
+    @Produces
+    @ApplicationScoped
+    CreateGreeting createGreeting(GreetingStore greetingStore) {
+        return new CreateGreeting(greetingStore);
+    }
+}
+```
+
+```java
+// src/main/java/com/example/greetings/infrastructure/CreateGreetingRequest.java
+// === INFRASTRUCTURE LAYER ===
+package com.example.greetings.infrastructure;
+
+public record CreateGreetingRequest(String message) {
+}
+```
+
+```java
+// src/main/java/com/example/greetings/infrastructure/GreetingResponse.java
+// === INFRASTRUCTURE LAYER ===
+package com.example.greetings.infrastructure;
+
+import com.example.greetings.domain.Greeting;
+import java.util.UUID;
+
+public record GreetingResponse(UUID id, String message) {
+    static GreetingResponse from(Greeting greeting) {
+        return new GreetingResponse(greeting.id(), greeting.message());
+    }
+}
+```
+
+```java
+// src/main/java/com/example/greetings/infrastructure/GreetingResource.java
+// === INFRASTRUCTURE LAYER ===
+package com.example.greetings.infrastructure;
+
+import com.example.greetings.domain.CreateGreeting;
+import com.example.greetings.domain.Greeting;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import java.net.URI;
+import java.util.UUID;
+
+@Path("/greetings")
+@Consumes(MediaType.APPLICATION_JSON)
+@Produces(MediaType.APPLICATION_JSON)
+public final class GreetingResource {
+    private final CreateGreeting createGreeting;
+    private final GreetingConfig greetingConfig;
+
+    @Inject
+    public GreetingResource(CreateGreeting createGreeting, GreetingConfig greetingConfig) {
+        this.createGreeting = createGreeting;
+        this.greetingConfig = greetingConfig;
+    }
+
+    @POST
+    public Response create(CreateGreetingRequest request) {
+        String requestedMessage = request.message();
+        String message = requestedMessage == null || requestedMessage.isBlank()
+                ? greetingConfig.defaultMessage()
+                : requestedMessage;
+        Greeting greeting = createGreeting.execute(UUID.randomUUID(), message);
+        URI location = URI.create("/greetings/" + greeting.id());
+        return Response.created(location).entity(GreetingResponse.from(greeting)).build();
+    }
+}
+```
+
+```java
+// src/main/java/com/example/greetings/infrastructure/ErrorResponse.java
+// === INFRASTRUCTURE LAYER ===
+package com.example.greetings.infrastructure;
+
+public record ErrorResponse(String code, String message) {
+}
+```
+
+```java
+// src/main/java/com/example/greetings/infrastructure/DomainExceptionMapper.java
+// === INFRASTRUCTURE LAYER ===
+package com.example.greetings.infrastructure;
+
+import com.example.greetings.domain.DomainException;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.ext.ExceptionMapper;
+import jakarta.ws.rs.ext.Provider;
+
+@Provider
+public final class DomainExceptionMapper implements ExceptionMapper<DomainException> {
+    @Override
+    public Response toResponse(DomainException error) {
+        ErrorResponse response = new ErrorResponse(error.code(), error.getMessage());
+        return Response.status(Response.Status.BAD_REQUEST).entity(response).build();
+    }
+}
+```
+
+`[CHECK] Quarkus flow: request -> resource -> CDI-produced plain use case -> domain entity -> store port -> Quarkus adapter; domain imports only `java.*`; config mapping, constructor injection, producer wiring, and `ExceptionMapper` stay in infrastructure.`

@@ -1,344 +1,644 @@
 ---
 name: python-craft
-version: 2.1.0
+version: 2.1.1
 description: >
-  Enforces 2-layer pragmatic clean architecture, strict typing, and SRP
-  for Python codebases using FastAPI as the infrastructure framework.
+  Enforces production-grade, two-layer Python architecture with a standard-library-only
+  domain and typed FastAPI and SQLAlchemy 2.x infrastructure.
 applyTo: '**/*.py'
-tags: [python, fastapi, pydantic, typesafe, architecture, testing]
+tags: [python, fastapi, sqlalchemy, typesafe, architecture, testing]
 author: Voidlight
 ---
 
 ## Identity
 
-This skill acts as a senior Python architecture reviewer whose sole mandate is 2-layer clean architecture compliance. It does not negotiate on SRP, naming, or type-safety constraints. It treats every code-generation request as a domain-vs-infrastructure classification problem first, an implementation problem second. Scope: `.py` files only. Out of scope: infra provisioning, CI/CD YAML, non-Python glue code.
+This skill reviews and generates Python with one dependency direction: infrastructure depends on domain. Production domain code uses only the Python standard library. FastAPI, SQLAlchemy, serialization, persistence, transport, and composition stay in infrastructure. Tests may use project-approved test-only libraries without changing the production domain dependency rule.
 
 ## Mandatory Rules
 
-### Rule 1: Single Responsibility Principle
-1. Every function MUST do exactly one thing. If you can describe it with "and", split it.
-2. Every class/module MUST have exactly one reason to change.
-3. Maximum 30 lines per function. Maximum 300 lines per class/module.
-4. Extract helper functions for any logic that can be named independently.
-5. Never combine I/O with business logic in the same function.
-6. Never combine validation with transformation in the same function.
-7. Never combine error handling with happy path logic in the same function.
-8. Use pure functions for business logic. Side effects only in infrastructure layer.
-9. Function names MUST describe WHAT the function does, not HOW.
-10. If a function requires a comment to explain its purpose, rename the function.
+### Rule 1: Two-Layer Architecture
+1. Organize production code into exactly two conceptual layers: `domain/` and `infrastructure/`.
+2. Put entities, value objects, domain errors, ports, and use cases in `domain/`.
+3. Put HTTP boundaries, persistence adapters, external clients, configuration, and wiring in `infrastructure/`.
+4. Allow dependencies from infrastructure to domain, never from domain to infrastructure.
+5. Keep use cases callable without FastAPI, SQLAlchemy, HTTP requests, or database sessions.
+6. Define ports in domain and implement them in infrastructure.
+7. Pass domain types and standard-library types through port contracts.
+8. Convert infrastructure records and transport models at the layer boundary.
+9. Wire concrete adapters to use cases in infrastructure rather than constructing adapters in domain.
+10. Extend an existing equivalent two-layer layout instead of creating duplicate architectural folders.
 
-### Rule 2: Explicit Naming
-1. Function names MUST be at least 3 words: `verb + noun + qualifier`. BAD: `process()`, `handle()`, `do()`. GOOD: `parseUserConfiguration()`, `validateEmailFormat()`, `calculateTotalPriceWithTax()`
-2. Variable names MUST describe intent, not type. BAD: `s`, `str`, `data`, `temp`, `result`, `obj`. GOOD: `rawUserInput`, `validatedEmailAddress`, `pendingOrderItems`
-3. Boolean names MUST be predicates: `isValid`, `hasPermission`, `shouldRetry`, `canExecute`.
-4. Collection names MUST be plural: `activeUsers`, `pendingOrders`, `processedInvoices`.
-5. Never use abbreviations except universally accepted ones: `id`, `url`, `http`, `json`.
-6. Never use Hungarian notation or type prefixes: `strName`, `intCount`, `bEnabled`.
-7. Constants MUST be UPPER_SNAKE_CASE: `MAX_RETRY_COUNT`, `DEFAULT_TIMEOUT_MS`.
-8. Error variables MUST include "error" or "failure": `parseError`, `connectionFailure`.
-9. Callback parameters MUST describe the event: `onUserRegistered`, `whenPaymentFailed`.
-10. Factory functions MUST start with `create`, `build`, or `make`: `createUserFactory()`.
+### Rule 2: Production Domain Purity
+1. Restrict production files under `domain/` to Python standard-library imports and other domain modules.
+2. Keep FastAPI, Pydantic, SQLAlchemy, database drivers, logging packages, and vendor SDKs out of domain.
+3. Model expected business failures with descriptive domain exception types, not generic `ValueError`.
+4. Keep domain errors independent of HTTP status codes, ORM exceptions, and transport payloads.
+5. Express ports with `Protocol` or `abc` using complete typed method bodies, never unfinished stubs.
+6. Put business invariants and state transitions on entities or focused domain services.
+7. Keep use-case orchestration focused on domain decisions and port calls.
+8. Inject nondeterministic collaborators such as clocks when deterministic behavior is required.
+9. Use standard-library value types such as `UUID`, `Decimal`, `datetime`, and `Enum` where they fit the model.
+10. Verify domain imports independently from test imports because test-only libraries are allowed only in tests.
 
-### Rule 3: Type Safety (Maximum Strictness)
-1. Every variable declaration MUST have an explicit type annotation.
-2. Every function parameter MUST have an explicit type annotation.
-3. Every function MUST declare its return type explicitly.
-4. Never use language-specific escape hatches: `any` (TS), `Any` (Python), `unsafe` (Rust), `raw` types.
-5. Use branded types for IDs and slugs to prevent accidental mixing.
-6. Use `unknown` (TS) or `object` (Python) with `isinstance` checks, never `any`/`Any`.
-7. Use `Option<T>` / `Optional[T]` / `T | null` for nullable values. Never use null/None without wrapping.
-8. Use `Result<T, E>` / `Either<L, R>` / `Try[T]` for fallible operations. Never throw/raise without typed catch.
-9. Use `readonly` / `final` / `const` for values that do not change after initialization.
-10. Use generics with bounded type parameters. Never use raw generic types.
+### Rule 3: Infrastructure Boundaries
+1. Validate and deserialize transport input in the HTTP boundary before invoking a use case.
+2. Convert domain results into explicit response models in infrastructure.
+3. Implement each domain port with an adapter dedicated to one external concern.
+4. Translate database, network, and framework failures into domain or boundary errors at the owning boundary.
+5. Keep domain exceptions free of FastAPI `HTTPException` and response classes.
+6. Map domain errors to HTTP responses in a dedicated exception handler or mapping function.
+7. Keep happy-path route and use-case code free of duplicated error-mapping branches.
+8. Create sessions, clients, and adapters through infrastructure wiring with explicit lifetimes.
+9. Use `Annotated` dependency aliases for typed FastAPI dependencies.
+10. Keep authentication, authorization transport, rate limiting, metrics, and tracing in infrastructure.
 
-### Rule 4: 2-Layer Clean Architecture
-1. Domain Layer (inbound, pure native): Contains entities, value objects, use cases, domain services, domain events, ports (interfaces), domain exceptions.
-2. Infrastructure Layer (outbound): Contains persistence adapters, REST controllers/presenters, external service clients, framework configuration, DI setup.
-3. Domain layer code MUST compile/run with only the language standard library.
-4. Domain layer MUST have ZERO framework imports.
-5. Domain layer MUST have ZERO external library imports.
-6. Infrastructure implements domain ports (interfaces defined in domain).
-7. Use dependency injection at the infrastructure level to wire ports to implementations.
-8. Use cases are plain classes/functions, callable without HTTP or UI.
-9. Entities are self-validating with behavior, never anemic data bags.
-10. Never expose infrastructure types (ORM models, framework DTOs) to domain.
+### Rule 4: Python Type Safety
+1. Fully annotate every public function, method, constructor, return type, and port contract.
+2. Fully annotate public model attributes and domain entity fields.
+3. Allow local inference when the assigned expression makes the type unambiguous.
+4. Add a local annotation when inference is ambiguous, a collection starts empty, or narrowing needs help.
+5. Avoid `Any` in public contracts; accept `object` and narrow it when genuinely unknown input is required.
+6. Represent absence with `T | None` and narrow before use.
+7. Use parameterized collections and generics rather than raw `list`, `dict`, `set`, or `type` annotations.
+8. Use `NewType`, immutable value objects, or distinct classes when interchangeable primitives would hide domain mistakes.
+9. Preserve precise return types across adapters and boundary conversion functions.
+10. Follow the Python version declared by the project before using newer annotation syntax.
 
-### Rule 5: Inbound Layer Pure Native
-1. Domain layer code MUST compile/run with only the language standard library.
-2. Domain layer MUST have ZERO framework imports.
-3. Domain layer MUST have ZERO external library imports.
-4. No framework exceptions in domain: no `SpringException`, no `HttpException`, no `VueError`.
-5. No framework DTOs in domain: no `@RequestBody`, no `Request` object, no `Props` interface.
-6. Use cases MUST be callable as plain functions, not tied to HTTP routes or UI events.
-7. Domain ports (interfaces) MUST use only domain types and standard library types.
-8. Framework layer is GONE — controllers and presenters live in infrastructure/rest/.
-9. Application layer is GONE — use cases live in domain/usecase/.
-10. Test domain with only standard library and mock port implementations.
+### Rule 5: Naming and Responsibility
+1. Choose descriptive names that communicate domain intent without enforcing an arbitrary word count.
+2. Name functions with an action and the concept they affect when that improves clarity.
+3. Name booleans as predicates such as `is_active`, `has_access`, or `should_retry`.
+4. Name collections with plural nouns and mappings by their relationship when useful.
+5. Avoid vague names such as `data`, `thing`, `process`, or `handle` when a precise domain name exists.
+6. Use short conventional names such as `id`, `url`, and `db` only where their meaning is immediate.
+7. Give exception variables descriptive names ending in `_error` or `_failure`, never one-letter names.
+8. Give each function, class, and module one cohesive responsibility rather than enforcing blanket line limits.
+9. Extract logic when it has an independent contract, needs isolated tests, or obscures the caller.
+10. Prefer direct readable code over helpers that merely rename one expression.
 
-### Rule 6: Error Handling & Fallibility
-1. Every fallible operation returns `Result`-like type, never raises for expected failure paths.
-2. Domain exceptions subclass a single `DomainException` base, never `Exception` directly.
-3. Infrastructure layer catches framework exceptions and maps them to domain errors at the boundary.
-4. Never swallow exceptions silently — log or re-raise as typed domain error.
-5. Never use bare `except:`.
-6. Validation errors are distinct types from business-rule violations.
-7. Use case return types are explicit unions, never `Any`.
-8. Retry logic lives in infrastructure, never in domain.
-9. Timeouts are infrastructure concerns, never hardcoded in domain.
-10. Every custom exception carries a machine-readable `code` field, not just a message.
+### Rule 6: Errors and Fallibility
+1. Raise descriptive domain exceptions for expected invariant and business-rule failures.
+2. Use a shared domain error base only when consumers need common handling.
+3. Give machine-consumed domain errors stable codes or structured attributes.
+4. Preserve the original exception as the cause when an adapter translates an infrastructure failure.
+5. Catch only exceptions the current boundary can translate, recover from, or enrich.
+6. Never use a bare `except` or silently discard a failure.
+7. Let unexpected programming failures propagate to centralized observability and failure handling.
+8. Keep retry, timeout, and circuit-breaker behavior in infrastructure.
+9. Separate HTTP error mapping from happy-path route logic through handlers or focused mappers.
+10. Document port failure semantics when callers must make a domain decision from them.
 
-### Rule 7: Testing Discipline
-1. Domain layer tests use only stdlib + mock ports — zero framework test fixtures.
-2. Use `pytest` fixtures with explicit `scope`.
-3. Use `hypothesis` for property-based tests on entity invariants.
-4. Use `factory-boy` for test data construction, never inline dict literals for complex objects.
-5. Minimum coverage target: domain layer 90%, infrastructure layer 70%.
-6. Integration tests live in `tests/infrastructure/`, unit tests in `tests/domain/`.
-7. Never test private methods directly — test through public use case entry points.
-8. Mock at port boundaries only, never mock domain entities.
-9. Contract tests verify infrastructure adapters satisfy domain port interfaces.
-10. Snapshot/golden-file tests forbidden for domain logic (masks regressions).
+### Rule 7: SQLAlchemy 2.x Persistence
+1. Declare ORM bases by subclassing `DeclarativeBase`.
+2. Declare mapped attributes with `Mapped[T]` and `mapped_column`.
+3. Build reads with `select` and execute them through typed `Session` APIs.
+4. Do not use legacy `declarative_base`, untyped `Column` attributes, or `Session.query`.
+5. Keep ORM rows in infrastructure and map them explicitly to domain entities.
+6. Type repository constructors and store a typed `Session` or `AsyncSession`.
+7. Define transaction ownership explicitly in the adapter or infrastructure service boundary.
+8. Roll back a failed transaction before translating or re-raising its exception.
+9. Use parameterized SQLAlchemy expressions rather than interpolated SQL strings.
+10. Match sync or async SQLAlchemy usage to the existing project instead of mixing both styles.
 
-### Rule 8: Async/Concurrency Discipline
-1. Use `asyncio` for I/O-bound work, `threading`/`multiprocessing` for CPU-bound.
-2. Never mix blocking calls inside `async def` without `loop.run_in_executor`.
-3. Domain use cases may be `async def` but must not import `asyncio` internals for business logic.
-4. Never use `time.sleep()` inside async code — use `asyncio.sleep()`.
-5. Every `async def` in infrastructure must have an explicit timeout.
-6. Use `asyncio.gather()` with `return_exceptions=True` when partial failure is acceptable.
-7. Never leave a `Task` unawaited without explicit fire-and-forget justification in a comment.
-8. Connection pools are infrastructure-owned, never instantiated inside a use case.
-9. Cancellation must be handled explicitly in long-running infrastructure tasks.
-10. No shared mutable state across coroutines without a lock or actor pattern.
+### Rule 8: Testing Discipline
+1. Test domain entities and use cases without FastAPI clients, ORM sessions, database fixtures, or framework fixtures.
+2. Use handwritten fakes or standard-library mocks at domain port boundaries.
+3. Permit test-only libraries such as `pytest` or Hypothesis when the project already configures or requests them.
+4. Keep production domain dependencies standard-library-only even when domain tests import test libraries.
+5. Test business outcomes and observable state rather than private implementation details.
+6. Add contract tests for each infrastructure adapter's port semantics.
+7. Add HTTP tests for validation, response conversion, and centralized domain-error mapping.
+8. Use real infrastructure resources only in infrastructure integration tests.
+9. Cover success, domain failure, infrastructure translation, and transaction rollback where applicable.
+10. Follow the repository's test layout, fixture policy, and naming conventions.
 
-### Rule 9: Security Practices
-1. Never use `eval()`, `exec()`, or `compile()` on any input.
-2. Never `pickle.loads()` untrusted data.
-3. Never `os.system()` or `subprocess.call(shell=True)`.
-4. Use `bandit` for static security scanning, `safety` for dependency CVEs.
-5. All secrets via environment variables or a secrets manager, never hardcoded.
-6. Input validation happens at the infrastructure boundary before reaching domain.
-7. SQL only via parameterized queries/ORM — never string-formatted SQL.
-8. Never log secrets, tokens, or PII at any log level.
-9. Rate limiting and auth are infrastructure concerns, never domain concerns.
-10. Dependency versions pinned; no wildcard version ranges in `pyproject.toml`.
+### Rule 9: Async, Resources, and Security
+1. Match route, port, and adapter concurrency styles deliberately; do not call blocking I/O from async code.
+2. Use `asyncio.to_thread` or an executor only as an explicit bridge for unavoidable blocking work.
+3. Await owned tasks or retain and supervise deliberately detached tasks.
+4. Propagate cancellation in long-running asynchronous infrastructure operations.
+5. Close sessions, clients, files, and streams with context managers or dependency cleanup.
+6. Keep connection pools and client lifetimes in infrastructure wiring.
+7. Never evaluate untrusted input with `eval`, `exec`, or dynamic code compilation.
+8. Never deserialize untrusted pickle data or invoke a shell with interpolated input.
+9. Keep secrets out of source code, logs, exceptions, and response payloads.
+10. Validate authorization at the appropriate infrastructure boundary while keeping domain policy framework-independent.
 
-### Rule 10: Documentation & Observability
-1. Every public domain function has a docstring stating pre/post-conditions, not implementation detail.
-2. Use `structlog` for structured logging; never `print()`.
-3. Every infrastructure adapter logs entry/exit at DEBUG, errors at ERROR.
-4. Domain layer never imports a logging library — it returns errors, infra logs them.
-5. Every module has a one-line module-level docstring stating its layer (domain/infrastructure).
-6. Type-check with `mypy --strict` in CI; zero errors allowed.
-7. Lint with `ruff`; zero warnings allowed.
-8. Every port interface documents its contract (idempotency, error cases) in the docstring.
-9. Metrics/tracing hooks live only in infrastructure.
-10. README per skill-generated module states the 2-layer boundary explicitly.
+### Rule 10: Documentation, Observability, and Tooling
+1. Document public domain contracts when names and types do not fully express invariants or failure semantics.
+2. Write comments for non-obvious decisions, not line-by-line narration.
+3. Keep logging, metrics, and tracing implementations in infrastructure.
+4. Log at ownership boundaries with enough context to diagnose failures without exposing secrets.
+5. Do not require entry and exit logs for every function or adapter.
+6. Read `pyproject.toml`, lock files, and repository configuration before selecting commands or libraries.
+7. Run a type checker only when the project configures one or the user requests it.
+8. Run linters, formatters, security scanners, and coverage tools only when project configuration selects them.
+9. Report the exact checks actually run and distinguish them from checks that were unavailable.
+10. Keep generated documentation and verification claims consistent with the code shown.
 
 ## Forbidden Patterns
 
-1. `Any` type annotation
-2. `eval()`, `exec()`, `compile()`
-3. `pickle.loads()` on untrusted data
-4. `os.system()` / `subprocess.call(shell=True)`
-5. Mutable default arguments (`def f(x=[])`)
-6. Bare `except:`
-7. `print()` in library code
-8. `global` keyword
-9. `__del__` for resource cleanup
-10. `requests` (sync) inside `async def`
-11. `time.sleep()` in async code
-12. `threading.Thread` without `join()`
-13. `isinstance` chains longer than 2
-14. FastAPI/Pydantic imports in domain layer
-15. Circular imports between `domain/` and `infrastructure/`
+1. Third-party imports in production `domain/` files
+2. FastAPI, Pydantic, SQLAlchemy, ORM rows, or framework exceptions in domain
+3. Infrastructure importing domain through a reverse callback that makes domain depend on infrastructure
+4. ORM or transport models crossing a domain port contract
+5. `Any` in public contracts without a documented interoperability constraint
+6. Untyped public functions, methods, constructors, entity fields, or port methods
+7. Generic `ValueError` used for a domain invariant or expected business failure
+8. Bare exception catches, swallowed exceptions, or one-letter exception variable names
+9. Repeated HTTP error mapping mixed into every happy-path route
+10. SQLAlchemy legacy `declarative_base`, untyped `Column` mappings, or `Session.query`
+11. Untyped FastAPI dependencies or default-value `Depends` when an `Annotated` alias is practical
+12. Mutable default arguments or hidden mutable global domain state
+13. String-formatted SQL, shell commands built from input, or hardcoded secrets
+14. Blocking I/O or `time.sleep` inside asynchronous code
+15. Unfinished stubs, omitted implementations, or empty `Protocol` method bodies
 
 ## Thinking Protocol
 
-1. Classify the request: which parts are domain concepts, which are infrastructure concerns?
-2. Enumerate entities, value objects, use cases, and ports needed — before writing code.
-3. Cross-check the plan against Forbidden Patterns — reject/replace any violating approach silently before output.
-4. Draft domain layer first; verify zero external imports mentally.
-5. Draft infrastructure layer implementing the domain ports; verify framework code is isolated there.
-6. Self-score against the rubric below; append the `[CHECK]` line; if score < 80, revise before responding.
+1. Inspect project metadata, Python version, package layout, framework versions, and configured tools.
+2. Classify each requested behavior as domain policy or infrastructure mechanism.
+3. Define domain entities, explicit errors, ports, and use-case contracts before choosing adapter details.
+4. Implement and inspect production domain imports for strict standard-library-only compliance.
+5. Implement typed infrastructure adapters, boundary error mapping, HTTP conversion, and wiring.
+6. Check every rule and forbidden pattern, fix conflicts explicitly, then report only verification actually performed.
 
 ## Response Rules
 
-1. Always present domain layer code before infrastructure layer code.
-2. Separate layers with explicit `# === DOMAIN LAYER ===` / `# === INFRASTRUCTURE LAYER ===` comment banners.
-3. Every code block ends with a `# [CHECK] ...` verification comment.
-4. Never explain in prose what a `[CHECK]` comment already covers.
-5. Every file reference includes its full intended path as a comment on line 1.
-6. Any deviation from these rules must be flagged explicitly, never silently applied.
-7. No `TODO`, `...`, or placeholder code — ever.
-8. Type hints on every function signature, even though Python doesn't require them.
-9. Self-report a 0–100 score with letter grade at the end of the response.
-10. Never combine multiple unrelated use cases into one example unless explicitly requested.
+1. Present domain files before infrastructure files for each feature or example.
+2. Mark every code block with an explicit intended path on its first line.
+3. Mark layers with `# === DOMAIN LAYER ===` and `# === INFRASTRUCTURE LAYER ===` banners.
+4. Provide complete implementations without unfinished stubs or omitted bodies.
+5. Keep imports complete and consistent with the declared project Python and dependency versions.
+6. Keep public contracts fully typed while allowing clear local inference.
+7. State any requested rule deviation explicitly instead of applying it silently.
+8. Keep examples focused on one cohesive use case unless the request requires more.
+9. Report changed files and checks run without claiming unexecuted validation.
+10. Run external tooling only when repository configuration or the user selects it.
 
 ## Context Awareness
 
-1. Detect existing `domain/`/`infrastructure/` folders — extend, don't duplicate.
-2. Detect existing test framework in use — don't introduce a second one.
-3. Detect Python version (`pyproject.toml`) — gates availability of `match`/walrus/etc.
-4. Detect Pydantic v1 vs v2 — breaking API differences change infra code.
-5. Detect sync vs async framework already in place before suggesting a pattern.
-6. Detect existing DI convention before introducing constructor-injection style that conflicts.
-7. Detect existing module layout/import style before renaming things.
-8. Detect monorepo vs single-package repo to resolve correct import paths.
+1. Detect and extend the existing domain and infrastructure package layout.
+2. Read the supported Python version before selecting syntax and standard-library features.
+3. Detect FastAPI, Pydantic, and SQLAlchemy versions before using version-sensitive APIs.
+4. Detect sync or async database and HTTP conventions before choosing adapter signatures.
+5. Detect the existing dependency-injection and application-factory conventions.
+6. Detect configured test libraries and keep framework or ORM fixtures out of domain unit tests.
+7. Detect configured type, lint, format, security, and coverage tools before invoking them.
+8. Detect package import roots, monorepo boundaries, and naming conventions before adding paths.
 
 ## Scoring Rubric
 
 | Category | Points |
-|---|---|
-| Domain purity (zero framework imports) | 20 |
-| SRP compliance | 15 |
-| Naming compliance | 15 |
-| Type safety | 15 |
-| Architecture layering correctness | 15 |
-| Forbidden pattern avoidance | 10 |
-| Testing/documentation completeness | 10 |
+|---|---:|
+| Production domain purity | 20 |
+| Dependency direction and two-layer architecture | 18 |
+| Public contract and ORM type safety | 15 |
+| Domain errors and boundary mapping | 14 |
+| FastAPI, SQLAlchemy, and wiring correctness | 13 |
+| Testing discipline | 10 |
+| Naming, documentation, and context fit | 10 |
 | **Total** | **100** |
 
-Grade bands: 97–100 = A+, 90–96 = A, 80–89 = B, 70–79 = C, 60–69 = D, <60 = F.
+Grade bands: 97-100 = A+, 90-96 = A, 80-89 = B, 70-79 = C, 60-69 = D, below 60 = F.
 
-## Example
+## Example 1: Register a User
 
 ```python
+# example_one/domain/users.py
 # === DOMAIN LAYER ===
 from __future__ import annotations
 
-import uuid
 from dataclasses import dataclass
-from datetime import datetime, timezone
-from decimal import Decimal
-from enum import Enum, auto
-from typing import Optional, Protocol
+from typing import ClassVar, Protocol
+from uuid import UUID, uuid4
 
 
-class OrderStatus(Enum):
-    PENDING = auto()
-    PAID = auto()
-    SHIPPED = auto()
-    CANCELLED = auto()
+class DomainError(Exception):
+    code: ClassVar[str] = "domain_error"
 
 
-@dataclass(frozen=True)
-class Order:
-    id: uuid.UUID
-    customer_id: uuid.UUID
-    status: OrderStatus
-    total_amount: Decimal
-    created_at: datetime
+class InvalidEmailError(DomainError):
+    code = "invalid_email"
 
-    @staticmethod
-    def create_new(customer_id: uuid.UUID, total_amount: Decimal) -> Order:
-        if total_amount <= Decimal("0"):
-            raise ValueError("Total amount must be positive")
-        return Order(
-            id=uuid.uuid4(),
-            customer_id=customer_id,
-            status=OrderStatus.PENDING,
-            total_amount=total_amount,
-            created_at=datetime.now(timezone.utc),
-        )
+    def __init__(self, email: str) -> None:
+        super().__init__(f"Invalid email address: {email}")
 
 
-class OrderRepository(Protocol):
-    def save(self, order: Order) -> Order: ...
-    def find_by_id(self, order_id: uuid.UUID) -> Optional[Order]: ...
+class EmailAlreadyRegisteredError(DomainError):
+    code = "email_already_registered"
+
+    def __init__(self, email: str) -> None:
+        super().__init__(f"Email is already registered: {email}")
 
 
-class CreateOrderUseCase:
-    def __init__(self, order_repository: OrderRepository) -> None:
-        self._order_repository: OrderRepository = order_repository
+class UserPersistenceConflictError(DomainError):
+    code = "user_persistence_conflict"
 
-    def execute(self, customer_id: uuid.UUID, total_amount: Decimal) -> Order:
-        if total_amount <= Decimal("0"):
-            raise ValueError("Total amount must be positive")
-        order: Order = Order.create_new(customer_id, total_amount)
-        return self._order_repository.save(order)
+    def __init__(self, email: str) -> None:
+        super().__init__(f"User could not be stored due to a conflict: {email}")
 
 
+@dataclass(frozen=True, slots=True)
+class User:
+    id: UUID
+    email: str
+
+    @classmethod
+    def register(cls, email: str) -> User:
+        normalized_email = email.strip().lower()
+        local_part, separator, domain_part = normalized_email.partition("@")
+        if not separator or not local_part or "." not in domain_part:
+            raise InvalidEmailError(email)
+        return cls(id=uuid4(), email=normalized_email)
+
+
+class UserRepository(Protocol):
+    def email_exists(self, email: str) -> bool:
+        raise NotImplementedError
+
+    def add(self, user: User) -> None:
+        raise NotImplementedError
+
+
+class RegisterUser:
+    def __init__(self, users: UserRepository) -> None:
+        self._users = users
+
+    def execute(self, email: str) -> User:
+        user = User.register(email)
+        if self._users.email_exists(user.email):
+            raise EmailAlreadyRegisteredError(user.email)
+        self._users.add(user)
+        return user
+```
+
+```python
+# example_one/infrastructure/user_persistence.py
 # === INFRASTRUCTURE LAYER ===
-from fastapi import FastAPI, Depends, HTTPException
-from pydantic import BaseModel
-from sqlalchemy import create_engine, Column, String, DateTime, Numeric
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session
-import uuid as uuid_module
+from __future__ import annotations
 
-Base = declarative_base()
+from uuid import UUID
 
-class OrderOrm(Base):
-    __tablename__ = "orders"
-    id = Column(String(36), primary_key=True)
-    customer_id = Column(String(36), nullable=False)
-    status = Column(String(20), nullable=False)
-    total_amount = Column(Numeric(10, 2), nullable=False)
-    created_at = Column(DateTime(timezone=True), nullable=False)
+from sqlalchemy import String, Uuid, select
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
+
+from example_one.domain.users import User, UserPersistenceConflictError
 
 
-class SqlalchemyOrderRepository:
+class Base(DeclarativeBase):
+    """Declarative base for user persistence."""
+
+
+class UserRow(Base):
+    __tablename__ = "users"
+
+    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    email: Mapped[str] = mapped_column(String(320), unique=True, nullable=False)
+
+
+class SqlAlchemyUserRepository:
     def __init__(self, session: Session) -> None:
-        self._session: Session = session
+        self._session = session
 
-    def save(self, order: Order) -> Order:
-        orm = OrderOrm(
-            id=str(order.id),
-            customer_id=str(order.customer_id),
-            status=order.status.name,
-            total_amount=order.total_amount,
-            created_at=order.created_at,
-        )
-        self._session.add(orm)
-        self._session.commit()
-        return order
+    def email_exists(self, email: str) -> bool:
+        statement = select(UserRow.id).where(UserRow.email == email)
+        return self._session.scalar(statement) is not None
 
-    def find_by_id(self, order_id: uuid_module.UUID) -> Optional[Order]:
-        orm = self._session.query(OrderOrm).filter_by(id=str(order_id)).first()
-        if orm is None:
-            return None
-        return Order(
-            id=uuid_module.UUID(orm.id),
-            customer_id=uuid_module.UUID(orm.customer_id),
-            status=OrderStatus[orm.status],
-            total_amount=Decimal(str(orm.total_amount)),
-            created_at=orm.created_at,
-        )
+    def add(self, user: User) -> None:
+        self._session.add(UserRow(id=user.id, email=user.email))
+        try:
+            self._session.commit()
+        except IntegrityError as integrity_error:
+            self._session.rollback()
+            raise UserPersistenceConflictError(user.email) from integrity_error
+```
+
+```python
+# example_one/infrastructure/user_api.py
+# === INFRASTRUCTURE LAYER ===
+from collections.abc import Iterator
+from os import environ
+from typing import Annotated
+from uuid import UUID
+
+from fastapi import Depends, FastAPI, Request, status
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
+
+from example_one.domain.users import (
+    DomainError,
+    EmailAlreadyRegisteredError,
+    InvalidEmailError,
+    RegisterUser,
+    UserPersistenceConflictError,
+)
+from example_one.infrastructure.user_persistence import SqlAlchemyUserRepository
 
 
-class CreateOrderRequest(BaseModel):
-    customer_id: str
-    total_amount: str
-
-
-class OrderResponse(BaseModel):
-    id: str
-    status: str
-
-
+DATABASE_URL = environ.get("DATABASE_URL", "sqlite:///./users.db")
+engine = create_engine(
+    DATABASE_URL,
+    connect_args={"check_same_thread": False},
+)
+session_factory = sessionmaker(engine, expire_on_commit=False)
 app = FastAPI()
-SessionLocal = sessionmaker(bind=create_engine("sqlite:///./test.db"))
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
-@app.post("/api/orders")
-def create_order(request: CreateOrderRequest, db: Session = Depends(get_db)):
-    repository = SqlalchemyOrderRepository(db)
-    use_case = CreateOrderUseCase(repository)
-    try:
-        order = use_case.execute(
-            customer_id=uuid_module.UUID(request.customer_id),
-            total_amount=Decimal(request.total_amount),
+class RegisterUserRequest(BaseModel):
+    email: str
+
+
+class UserResponse(BaseModel):
+    id: UUID
+    email: str
+
+
+def get_session() -> Iterator[Session]:
+    with session_factory() as session:
+        yield session
+
+
+SessionDependency = Annotated[Session, Depends(get_session)]
+
+
+def get_register_user(session: SessionDependency) -> RegisterUser:
+    return RegisterUser(SqlAlchemyUserRepository(session))
+
+
+RegisterUserDependency = Annotated[RegisterUser, Depends(get_register_user)]
+
+
+def map_domain_error(error: DomainError) -> tuple[int, str]:
+    if isinstance(error, InvalidEmailError):
+        return status.HTTP_422_UNPROCESSABLE_ENTITY, str(error)
+    if isinstance(
+        error,
+        (EmailAlreadyRegisteredError, UserPersistenceConflictError),
+    ):
+        return status.HTTP_409_CONFLICT, str(error)
+    return status.HTTP_400_BAD_REQUEST, str(error)
+
+
+@app.exception_handler(DomainError)
+async def respond_to_domain_error(
+    _request: Request,
+    error: DomainError,
+) -> JSONResponse:
+    status_code, detail = map_domain_error(error)
+    return JSONResponse(
+        status_code=status_code,
+        content={"code": error.code, "detail": detail},
+    )
+
+
+@app.post("/users", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+def register_user(
+    request: RegisterUserRequest,
+    use_case: RegisterUserDependency,
+) -> UserResponse:
+    user = use_case.execute(request.email)
+    return UserResponse(id=user.id, email=user.email)
+```
+
+## Example 2: Pay an Invoice
+
+```python
+# example_two/domain/invoices.py
+# === DOMAIN LAYER ===
+from __future__ import annotations
+
+from dataclasses import dataclass
+from decimal import Decimal
+from enum import Enum
+from typing import ClassVar, Protocol
+from uuid import UUID
+
+
+class DomainError(Exception):
+    code: ClassVar[str] = "domain_error"
+
+
+class InvalidInvoiceAmountError(DomainError):
+    code = "invalid_invoice_amount"
+
+    def __init__(self, amount: Decimal) -> None:
+        super().__init__(f"Invoice amount must be positive: {amount}")
+
+
+class InvoiceNotFoundError(DomainError):
+    code = "invoice_not_found"
+
+    def __init__(self, invoice_id: UUID) -> None:
+        super().__init__(f"Invoice was not found: {invoice_id}")
+
+
+class InvoiceAlreadyPaidError(DomainError):
+    code = "invoice_already_paid"
+
+    def __init__(self, invoice_id: UUID) -> None:
+        super().__init__(f"Invoice is already paid: {invoice_id}")
+
+
+class InvoiceStatus(str, Enum):
+    OPEN = "open"
+    PAID = "paid"
+
+
+@dataclass(slots=True)
+class Invoice:
+    id: UUID
+    amount: Decimal
+    status: InvoiceStatus
+
+    def __post_init__(self) -> None:
+        if self.amount <= Decimal("0"):
+            raise InvalidInvoiceAmountError(self.amount)
+
+    def mark_paid(self) -> None:
+        if self.status is InvoiceStatus.PAID:
+            raise InvoiceAlreadyPaidError(self.id)
+        self.status = InvoiceStatus.PAID
+
+
+class InvoiceRepository(Protocol):
+    def find(self, invoice_id: UUID) -> Invoice | None:
+        raise NotImplementedError
+
+    def save(self, invoice: Invoice) -> None:
+        raise NotImplementedError
+
+
+class PayInvoice:
+    def __init__(self, invoices: InvoiceRepository) -> None:
+        self._invoices = invoices
+
+    def execute(self, invoice_id: UUID) -> Invoice:
+        invoice = self._invoices.find(invoice_id)
+        if invoice is None:
+            raise InvoiceNotFoundError(invoice_id)
+        invoice.mark_paid()
+        self._invoices.save(invoice)
+        return invoice
+```
+
+```python
+# example_two/infrastructure/invoice_persistence.py
+# === INFRASTRUCTURE LAYER ===
+from __future__ import annotations
+
+from decimal import Decimal
+from uuid import UUID
+
+from sqlalchemy import Enum as SqlEnum
+from sqlalchemy import Numeric, Uuid, select
+from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
+from sqlalchemy.orm.exc import StaleDataError
+
+from example_two.domain.invoices import (
+    Invoice,
+    InvoiceNotFoundError,
+    InvoiceStatus,
+)
+
+
+class Base(DeclarativeBase):
+    """Declarative base for invoice persistence."""
+
+
+class InvoiceRow(Base):
+    __tablename__ = "invoices"
+
+    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    status: Mapped[InvoiceStatus] = mapped_column(
+        SqlEnum(InvoiceStatus, native_enum=False),
+        nullable=False,
+    )
+
+
+class SqlAlchemyInvoiceRepository:
+    def __init__(self, session: Session) -> None:
+        self._session = session
+
+    def find(self, invoice_id: UUID) -> Invoice | None:
+        statement = select(InvoiceRow).where(InvoiceRow.id == invoice_id)
+        invoice_row = self._session.scalar(statement)
+        if invoice_row is None:
+            return None
+        return Invoice(
+            id=invoice_row.id,
+            amount=invoice_row.amount,
+            status=invoice_row.status,
         )
-        return OrderResponse(id=str(order.id), status=order.status.name)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
 
-# [CHECK] mypy --strict? pytest pass? ruff clean? bandit clean? Domain has zero FastAPI/SQLAlchemy imports?
+    def save(self, invoice: Invoice) -> None:
+        invoice_row = self._session.get(InvoiceRow, invoice.id)
+        if invoice_row is None:
+            raise InvoiceNotFoundError(invoice.id)
+        invoice_row.amount = invoice.amount
+        invoice_row.status = invoice.status
+        self._commit(invoice.id)
+
+    def _commit(self, invoice_id: UUID) -> None:
+        try:
+            self._session.commit()
+        except StaleDataError as stale_data_error:
+            self._session.rollback()
+            raise InvoiceNotFoundError(invoice_id) from stale_data_error
+```
+
+```python
+# example_two/infrastructure/invoice_api.py
+# === INFRASTRUCTURE LAYER ===
+from collections.abc import Iterator
+from decimal import Decimal
+from os import environ
+from typing import Annotated
+from uuid import UUID
+
+from fastapi import Depends, FastAPI, Request, status
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
+
+from example_two.domain.invoices import (
+    DomainError,
+    InvalidInvoiceAmountError,
+    InvoiceAlreadyPaidError,
+    InvoiceNotFoundError,
+    InvoiceStatus,
+    PayInvoice,
+)
+from example_two.infrastructure.invoice_persistence import (
+    SqlAlchemyInvoiceRepository,
+)
+
+
+DATABASE_URL = environ.get("DATABASE_URL", "sqlite:///./invoices.db")
+engine = create_engine(
+    DATABASE_URL,
+    connect_args={"check_same_thread": False},
+)
+session_factory = sessionmaker(engine, expire_on_commit=False)
+app = FastAPI()
+
+
+class InvoiceResponse(BaseModel):
+    id: UUID
+    amount: Decimal
+    status: InvoiceStatus
+
+
+def get_session() -> Iterator[Session]:
+    with session_factory() as session:
+        yield session
+
+
+SessionDependency = Annotated[Session, Depends(get_session)]
+
+
+def get_pay_invoice(session: SessionDependency) -> PayInvoice:
+    return PayInvoice(SqlAlchemyInvoiceRepository(session))
+
+
+PayInvoiceDependency = Annotated[PayInvoice, Depends(get_pay_invoice)]
+
+
+def map_domain_error(error: DomainError) -> tuple[int, str]:
+    if isinstance(error, InvoiceNotFoundError):
+        return status.HTTP_404_NOT_FOUND, str(error)
+    if isinstance(error, InvoiceAlreadyPaidError):
+        return status.HTTP_409_CONFLICT, str(error)
+    if isinstance(error, InvalidInvoiceAmountError):
+        return status.HTTP_422_UNPROCESSABLE_ENTITY, str(error)
+    return status.HTTP_400_BAD_REQUEST, str(error)
+
+
+@app.exception_handler(DomainError)
+async def respond_to_domain_error(
+    _request: Request,
+    error: DomainError,
+) -> JSONResponse:
+    status_code, detail = map_domain_error(error)
+    return JSONResponse(
+        status_code=status_code,
+        content={"code": error.code, "detail": detail},
+    )
+
+
+@app.post("/invoices/{invoice_id}/pay", response_model=InvoiceResponse)
+def pay_invoice(
+    invoice_id: UUID,
+    use_case: PayInvoiceDependency,
+) -> InvoiceResponse:
+    invoice = use_case.execute(invoice_id)
+    return InvoiceResponse(
+        id=invoice.id,
+        amount=invoice.amount,
+        status=invoice.status,
+    )
 ```

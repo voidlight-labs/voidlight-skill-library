@@ -1,6 +1,6 @@
 ---
 name: {language}-craft
-version: 2.1.0
+version: 2.1.1
 description: >
   {One-line description}
 applyTo: '{glob pattern}'

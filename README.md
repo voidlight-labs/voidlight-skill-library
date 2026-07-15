@@ -58,13 +58,45 @@ The Voidlight Skill Library is a collection of `.md` skill files that AI agents 
 | `java-craft` | `**/*.java` | Spring Boot, Quarkus |
 | `python-craft` | `**/*.py` | FastAPI |
 | `rust-craft` | `**/*.rs` | Axum, Actix |
-| `typescript-craft` | `**/*.ts` | Express, Fastify |
+| `typescript-craft` | `**/*.ts` | Backend TypeScript: Express, Fastify |
 | `nuxt-craft` | `**/*.{vue,ts}` | Nuxt 3, Vue 3 |
 | `nextjs-craft` | `**/*.{tsx,ts}` | Next.js App Router |
 
+## Quick Install
+
+One-liner install for any supported agent:
+
+```bash
+curl -sL https://raw.githubusercontent.com/voidlight-labs/voidlight-skill-library/main/install.sh | bash -s -- python-craft
+```
+
+Or with Python (cross-platform, including Windows):
+
+```bash
+python -c "$(curl -sL https://raw.githubusercontent.com/voidlight-labs/voidlight-skill-library/main/install.py)" python-craft
+```
+
+### Install all skills
+
+```bash
+curl -sL ... | bash -s -- --all
+```
+
+### Per-agent quick install
+
+| Agent | Command | Install Target |
+|---|---|---|
+| **OpenCode** | `bash install.sh python-craft` | `~/.agents/skills/python-craft/SKILL.md` |
+| **Kimi Code CLI** | `bash install.sh python-craft` | `~/.kimi-code/skills/python-craft/SKILL.md` |
+| **Gemini CLI** | `bash install.sh --agent gemini python-craft` | `~/.gemini/GEMINI.md` (append) |
+| **Claude** (project) | `bash install.sh --agent claude python-craft` | `CLAUDE.md` (project root) |
+| **GitHub Copilot** | `bash install.sh --agent codex python-craft` | `.github/copilot-instructions.md` |
+
+For detailed install options, see [docs/INSTALL.md](docs/INSTALL.md).
+
 ## Quick Start
 
-Copy the skill file for your language/framework into your AI agent's skill directory.
+Copy the skill file for your language/framework into your AI agent's skill directory, or use the install script above.
 
 ## Benchmark
 
