@@ -10,6 +10,8 @@
 
 The Voidlight Skill Library is a collection of `.md` skill files that AI agents load to enforce strict coding standards. Each skill targets a specific language or framework, providing a complete rulebook for generating production-grade code.
 
+This repo also provides **Agent Personas** in `agents/` — structured identity definitions for OpenCode subagents (architect, smith, surveyor) that enforce the 2-layer architecture discipline at the agent orchestration level.
+
 ## Architecture Principle: 2-Layer Pragmatic Clean Architecture
 
 ```
