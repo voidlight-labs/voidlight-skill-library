@@ -61,6 +61,7 @@ The Voidlight Skill Library is a collection of `.md` skill files that AI agents 
 | `typescript-craft` | `**/*.ts` | Backend TypeScript: Express, Fastify |
 | `nuxt-craft` | `**/*.{vue,ts}` | Nuxt 3, Vue 3 |
 | `nextjs-craft` | `**/*.{tsx,ts}` | Next.js App Router |
+| `markdown-to-vdl` | `**/*.md` | VDL (Voidlight Definition Language) |
 
 ## Quick Install
 

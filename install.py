@@ -33,6 +33,7 @@ SKILLS = [
     "typescript-craft",
     "nuxt-craft",
     "nextjs-craft",
+    "markdown-to-vdl",
 ]
 
 # Agent paths

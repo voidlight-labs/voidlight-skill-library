@@ -10,7 +10,7 @@ REPO_NAME="voidlight-skill-library"
 BRANCH="main"
 RAW_BASE="https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${BRANCH}"
 
-SKILLS="java-craft python-craft rust-craft typescript-craft nuxt-craft nextjs-craft"
+SKILLS="java-craft python-craft rust-craft typescript-craft nuxt-craft nextjs-craft markdown-to-vdl"
 
 # Color output
 RED='\033[0;31m'

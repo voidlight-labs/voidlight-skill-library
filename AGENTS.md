@@ -8,7 +8,7 @@ Documentation/knowledge repo, not a code project. No build system, no CI/CD, no 
 
 | Path | What |
 |------|------|
-| `skills/{lang}-craft/SKILL.md` | One per language (6 total). Self-contained AI skill specs loaded by agents. |
+| `skills/{lang}-craft/SKILL.md` | One per language (7 total). Self-contained AI skill specs loaded by agents. |
 | `benchmark/benchmark.py` | Python script evaluating AI-generated code against skill rules. |
 | `benchmark/scenarios/{lang}/scenario-{NN}-{difficulty}.md` | 30 total (5 per skill). Input files for the benchmark. |
 | `SKILL_TEMPLATE.md` | Canonical template for creating new skills. |
@@ -71,6 +71,7 @@ New skills or edits must pass:
 | `typescript-craft` | `**/*.ts` | Backend TypeScript: Express, Fastify |
 | `nuxt-craft` | `**/*.{vue,ts}` | Nuxt 3, Vue 3 |
 | `nextjs-craft` | `**/*.{tsx,ts}` | Next.js App Router |
+| `markdown-to-vdl` | `**/*.md` | VDL (Voidlight Definition Language) |
 
 ## Install Script
 
