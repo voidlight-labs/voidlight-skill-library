@@ -1,9 +1,10 @@
 ---
 name: java-craft
-version: 2.1.1
+version: 2.1.2
 description: >
   Enforces pragmatic 2-layer architecture, domain purity, type safety, and
-  modern Spring Boot or Quarkus integration for Java codebases.
+  modern Spring Boot or Quarkus integration for Java codebases. Value Objects
+  own invariant behavior; external capabilities are declared as Ports.
 applyTo: '**/*.java'
 tags: [java, spring, quarkus, jvm, typesafe, architecture]
 author: Voidlight
@@ -11,7 +12,7 @@ author: Voidlight
 
 ## Identity
 
-This skill acts as a senior Java implementation and review guide for 2-layer architecture. Production domain code uses only the Java standard library; infrastructure owns frameworks, transports, persistence, configuration, and observability. Test source may use libraries declared with test-only scope, but domain unit tests never use Spring or Quarkus fixtures. Scope: Java source files. Inspect project manifests before selecting Java features, frameworks, libraries, or tooling.
+This skill acts as a senior Java implementation and review guide for 2-layer architecture. Production domain code uses only the Java standard library; infrastructure owns frameworks, transports, persistence, configuration, and observability. Value Objects carry invariant behavior; external capabilities (hashing, payment, messaging) are declared as Ports in the domain and implemented as Adapters in infrastructure. Test source may use libraries declared with test-only scope, but domain unit tests never use Spring or Quarkus fixtures. Scope: Java source files. Inspect project manifests before selecting Java features, frameworks, libraries, or tooling.
 
 ## Mandatory Rules
 
@@ -75,7 +76,31 @@ This skill acts as a senior Java implementation and review guide for 2-layer arc
 9. Prevent dependency cycles: infrastructure may depend on domain, while domain never depends on infrastructure.
 10. Permit declared test-only libraries in test source, but keep domain unit tests free of Spring and Quarkus fixtures.
 
-### Rule 6: Java Idioms
+### Rule 6: Value Objects Own Invariants
+1. Value objects are immutable, compared by value, and have no business identity.
+2. Value objects MAY contain behavior: invariant enforcement, validation rules, and pure calculations that need no external dependency.
+3. Value objects MUST NOT perform side effects, randomness, or I/O; those belong to ports.
+4. Value object constructors and factory methods MUST reject invalid state and throw domain exceptions.
+5. Primitive or string identifiers that carry rules (email format, password strength, money scale) MUST be modeled as value objects.
+6. Value objects MUST NOT import framework or third-party libraries; they compile with `java.*` and domain types only.
+7. A value object that needs an external capability (hashing, payment, messaging) MUST delegate to a port, never embed the implementation.
+8. Value object validation that requires external data (e.g., uniqueness check) MUST happen in the use case or port, not in the value object.
+9. Prefer records for immutable data carriers when supported and when record semantics fit; use classes for identity, behavior, or controlled mutation.
+10. Return value objects from port methods when the result is a domain concept, not a primitive.
+
+### Rule 7: Ports for External Capabilities
+1. A port is a domain-defined interface that declares a capability the domain needs but does not implement.
+2. Repositories are ports; so are hashers, token generators, payment gateways, email senders, and clock providers.
+3. Ports reside in the domain layer and use only domain and Java standard-library types.
+4. Ports MUST NOT leak framework types such as `Page<T>`, `Sort`, `Pageable`, `EntityManager`, or `HttpResponse`.
+5. Infrastructure adapters implement ports and own all framework-specific code.
+6. A port that produces randomness or side effects (hashing, token generation) MUST return a domain value object, not a raw primitive, when the result carries domain meaning.
+7. Use cases receive ports through constructor injection and remain agnostic of the adapter implementation.
+8. Domain services are stateless pure logic; if a domain service needs an external capability, it becomes a port or receives a port.
+9. Do not create a port for logic that can be expressed as a pure function inside a value object or entity.
+10. Name ports for the capability they provide: `UserRepository`, `PasswordHasher`, `TokenGenerator`, `PaymentGateway`.
+
+### Rule 8: Java Idioms
 1. Use records for immutable data carriers when supported and when record semantics fit; use classes for identity, behavior, or controlled mutation.
 2. Use `Objects.requireNonNull` or explicit checks for required constructor and method inputs.
 3. Use `BigDecimal` for decimal money and define scale and rounding rules at the owning boundary or domain policy.
@@ -87,7 +112,7 @@ This skill acts as a senior Java implementation and review guide for 2-layer arc
 9. Use checked or unchecked exceptions consistently with the existing codebase and make recovery expectations explicit.
 10. Gate records, sealed types, pattern matching, virtual threads, and other language features on the Java version declared by the project.
 
-### Rule 7: Spring Boot and Quarkus Integration
+### Rule 9: Spring Boot and Quarkus Integration
 1. Use constructor injection only; injected dependencies are `final`, with no Spring or Quarkus field injection.
 2. Keep framework annotations in infrastructure, including `@RestController`, `@Path`, `@Repository`, `@ApplicationScoped`, and transaction annotations.
 3. In Spring Boot, bind grouped configuration with type-safe `@ConfigurationProperties` infrastructure types rather than scattered `@Value` fields.
@@ -99,7 +124,7 @@ This skill acts as a senior Java implementation and review guide for 2-layer arc
 9. Use Spring, Quarkus, MicroProfile, Jakarta, or extension-specific APIs only when the corresponding dependency and version are present in project manifests.
 10. Follow the selected framework's supported configuration and serialization conventions without mixing Spring and Quarkus APIs in one application path.
 
-### Rule 8: Errors and Boundaries
+### Rule 10: Errors and Boundaries
 1. Give expected domain failures dedicated types or a shared domain error base with stable codes when callers branch on them.
 2. Throw domain errors for violated business rules without embedding HTTP, database, or framework details.
 3. Map domain errors to HTTP responses in the inbound infrastructure boundary.
@@ -111,11 +136,11 @@ This skill acts as a senior Java implementation and review guide for 2-layer arc
 9. Never expose stack traces, internal exception messages, SQL details, or secrets in public responses.
 10. Preserve causes when translating exceptions and avoid duplicate logging at every stack frame.
 
-### Rule 9: Testing Discipline
+### Rule 11: Testing Discipline
 1. Domain unit tests may use test-only libraries declared in Maven or Gradle, including the project's existing JUnit version and assertion library.
 2. Domain unit tests MUST NOT use Spring Test, `@SpringBootTest`, Quarkus Test, `@QuarkusTest`, CDI containers, or framework fixtures.
 3. Test use cases with small hand-written port fakes or the project's declared mocking library at port boundaries.
-4. Test entity invariants, use-case outcomes, and expected domain errors through public APIs.
+4. Test entity invariants, use-case outcomes, value object validation, and expected domain errors through public APIs.
 5. Add parameterized or property-based tests only when the required test dependency exists and the input space benefits from them.
 6. Test infrastructure adapters with focused contract or integration tests using the framework facilities already declared by the project.
 7. Do not test private methods directly or mock domain entities and value objects.
@@ -123,7 +148,7 @@ This skill acts as a senior Java implementation and review guide for 2-layer arc
 9. Follow the repository's test source layout, naming convention, and coverage policy rather than inventing universal thresholds.
 10. Every behavior change includes targeted tests when the repository contains a runnable test setup; disclose when verification cannot run.
 
-### Rule 10: Documentation, Observability, and Tooling
+### Rule 12: Documentation, Observability, and Tooling
 1. Document public domain contracts when invariants, side effects, idempotency, absence, or failure behavior are not obvious from types and names.
 2. Keep comments focused on rationale and constraints, not line-by-line narration.
 3. Keep logging, metrics, tracing, correlation IDs, and framework health checks in infrastructure.
@@ -152,15 +177,18 @@ This skill acts as a senior Java implementation and review guide for 2-layer arc
 13. Reflection-driven business logic when normal polymorphism or explicit mapping suffices
 14. Spring or Quarkus test fixtures in domain unit tests
 15. Undeclared third-party libraries, plugins, framework features, or tooling assumptions
+16. Value objects that perform side effects, randomness, or I/O instead of delegating to ports
+17. Ports that leak framework types into domain signatures
 
 ## Thinking Protocol
 
 1. Classify requested behavior into domain concepts and infrastructure concerns.
-2. Inspect Java version, framework, dependencies, test libraries, package layout, and configured tooling in project manifests.
-3. Define the minimum entities, errors, use cases, and ports needed for the behavior.
-4. Draft and verify the production domain with standard-library-only imports and no infrastructure references.
-5. Draft infrastructure adapters, HTTP boundaries, error mapping, configuration, and constructor-based wiring against the domain contracts.
-6. Replace violations before output, run available targeted checks, self-score, and disclose any unavoidable deviation or unverified assumption.
+2. Determine whether a behavior is a pure invariant (value object), a cross-entity calculation (domain service), or an external capability (port).
+3. Inspect Java version, framework, dependencies, test libraries, package layout, and configured tooling in project manifests.
+4. Define the minimum entities, value objects, errors, use cases, and ports needed for the behavior.
+5. Draft and verify the production domain with standard-library-only imports and no infrastructure references.
+6. Draft infrastructure adapters, HTTP boundaries, error mapping, configuration, and constructor-based wiring against the domain contracts.
+7. Replace violations before output, run available targeted checks, self-score, and disclose any unavoidable deviation or unverified assumption.
 
 ## Response Rules
 
@@ -707,3 +735,116 @@ public final class DomainExceptionMapper implements ExceptionMapper<DomainExcept
 ```
 
 `[CHECK] Quarkus flow: request -> resource -> CDI-produced plain use case -> domain entity -> store port -> Quarkus adapter; domain imports only `java.*`; config mapping, constructor injection, producer wiring, and `ExceptionMapper` stay in infrastructure.`
+
+### Value Object with Invariant Example
+
+```java
+// src/main/java/com/example/auth/domain/Password.java
+// === DOMAIN LAYER ===
+package com.example.auth.domain;
+
+public record Password(String hash) {
+    private static final int MIN_LENGTH = 8;
+
+    public Password {
+        if (hash == null || hash.isBlank()) {
+            throw new DomainException("INVALID_PASSWORD", "Password hash must not be blank");
+        }
+    }
+
+    public static void validateRaw(String raw) {
+        if (raw == null || raw.length() < MIN_LENGTH) {
+            throw new DomainException("WEAK_PASSWORD",
+                "Password must be at least " + MIN_LENGTH + " characters");
+        }
+        if (!raw.matches(".*[A-Z].*")) {
+            throw new DomainException("WEAK_PASSWORD",
+                "Password must contain an uppercase letter");
+        }
+        if (!raw.matches(".*[a-z].*")) {
+            throw new DomainException("WEAK_PASSWORD",
+                "Password must contain a lowercase letter");
+        }
+        if (!raw.matches(".*\d.*")) {
+            throw new DomainException("WEAK_PASSWORD",
+                "Password must contain a digit");
+        }
+    }
+
+    public boolean isValid() {
+        return hash != null && !hash.isBlank();
+    }
+}
+```
+
+### Port for External Capability Example
+
+```java
+// src/main/java/com/example/auth/domain/PasswordHasher.java
+// === DOMAIN LAYER ===
+package com.example.auth.domain;
+
+public interface PasswordHasher {
+    Password hash(String rawPassword);
+    boolean verify(String rawPassword, Password stored);
+}
+```
+
+```java
+// src/main/java/com/example/auth/infrastructure/BcryptPasswordHasher.java
+// === INFRASTRUCTURE LAYER ===
+package com.example.auth.infrastructure;
+
+import com.example.auth.domain.Password;
+import com.example.auth.domain.PasswordHasher;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.stereotype.Component;
+
+@Component
+public final class BcryptPasswordHasher implements PasswordHasher {
+    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+
+    @Override
+    public Password hash(String rawPassword) {
+        return new Password(encoder.encode(rawPassword));
+    }
+
+    @Override
+    public boolean verify(String rawPassword, Password stored) {
+        return encoder.matches(rawPassword, stored.hash());
+    }
+}
+```
+
+### Use Case with Value Object and Port Example
+
+```java
+// src/main/java/com/example/auth/domain/RegisterUser.java
+// === DOMAIN LAYER ===
+package com.example.auth.domain;
+
+import java.util.Objects;
+import java.util.UUID;
+
+public final class RegisterUser {
+    private final UserRepository userRepository;
+    private final PasswordHasher passwordHasher;
+
+    public RegisterUser(UserRepository userRepository, PasswordHasher passwordHasher) {
+        this.userRepository = Objects.requireNonNull(userRepository, "userRepository");
+        this.passwordHasher = Objects.requireNonNull(passwordHasher, "passwordHasher");
+    }
+
+    public User execute(UUID id, Email email, String rawPassword) {
+        Password.validateRaw(rawPassword);
+
+        if (userRepository.existsByEmail(email)) {
+            throw new DomainException("EMAIL_EXISTS", "Email already registered: " + email.value());
+        }
+
+        Password password = passwordHasher.hash(rawPassword);
+        User user = User.register(id, email, password);
+        return userRepository.save(user);
+    }
+}
+```
