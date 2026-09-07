@@ -188,7 +188,7 @@ install_gemini() {
         printf "\n\n"
         printf "<!-- Voidlight Skill: %s -->\n" "$skill_name"
         printf "<!-- Source: https://github.com/%s/%s -->\n" "$REPO_OWNER" "$REPO_NAME"
-        printf "<!-- Version: 2.1.1 -->\n"
+        printf "<!-- Version: 2.2.0 -->\n"
         printf "\n"
         cat "$tmpfile"
     } >> "$target_file"

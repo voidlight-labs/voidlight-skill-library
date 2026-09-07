@@ -4,10 +4,15 @@
 
 Documentation/knowledge repo, not a code project. No build system, no CI/CD, no test suite. The only executable code is the benchmark runner.
 
+## Plugin Packaging
+
+The repo ships as a standard agent plugin (`.claude-plugin/plugin.json`, compatible with Claude Code and ZCode). The manifest `version` is the single source of truth — skill frontmatters carry the same version under `metadata.version`. Skill frontmatter uses the canonical top-level fields `name` + `description` only; `version`, `author`, `applyTo`, and `tags` live under `metadata`.
+
 ## Directory Map
 
 | Path | What |
 |------|------|
+| `.claude-plugin/plugin.json` | Plugin manifest (name, version, description, author, license). Single source of truth for version. |
 | `skills/{lang}-craft/SKILL.md` | One per language (7 total). Self-contained AI skill specs loaded by agents. |
 | `agents/{persona}.md` | 3 persona definitions (architect, smith, surveyor). Subagent identity specs. |
 | `benchmark/benchmark.py` | Python script evaluating AI-generated code against skill rules. |
@@ -99,8 +104,8 @@ Both scripts are read-only (no `sudo`, no `rm -rf`, no arbitrary code execution)
 
 ## Notes
 
-- Version shared across all skills: `2.1.1` (defined in YAML frontmatter). Keep in sync.
+- Version shared across all skills: `2.2.0` (source of truth: `.claude-plugin/plugin.json`). Keep in sync.
 - In Next.js or Nuxt projects, use the framework skill instead of `typescript-craft`; the latter is backend-only.
-- No opencode.json exists for this repo. No CI workflows. No pre-commit hooks.
+- No CI workflows. No pre-commit hooks.
 - The repo does not contain actual application code — only markdown specifications.
 - When adding a benchmark scenario, place it in the correct `benchmark/scenarios/{lang}/` directory.

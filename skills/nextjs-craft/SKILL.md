@@ -1,12 +1,14 @@
 ---
 name: nextjs-craft
-version: 2.1.1
-description: >
-  Enforces strict TypeScript, version-aware Next.js App Router practices,
-  and a pure domain/infrastructure architecture for production code.
-applyTo: '**/*.{tsx,ts}'
-tags: [nextjs, react, typescript, app-router, architecture]
-author: Voidlight
+description: >-
+  Enforces strict TypeScript, version-aware Next.js App Router practices, and
+  a pure domain/infrastructure architecture for production code. Use when
+  writing or reviewing TSX/TypeScript code in Next.js App Router projects.
+metadata:
+  version: '2.2.0'
+  author: Voidlight
+  applyTo: '**/*.{tsx,ts}'
+  tags: [nextjs, react, typescript, app-router, architecture]
 ---
 
 ## Identity

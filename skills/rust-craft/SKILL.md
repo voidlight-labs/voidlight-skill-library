@@ -1,12 +1,14 @@
 ---
 name: rust-craft
-version: 2.1.1
-description: >
+description: >-
   Enforces idiomatic Rust, strict standard-library-only production domains,
-  and pragmatic 2-layer architecture for Axum and Actix codebases.
-applyTo: '**/*.rs'
-tags: [rust, axum, actix, systems, safety, architecture]
-author: Voidlight
+  and pragmatic 2-layer architecture for Axum and Actix codebases. Use when
+  writing or reviewing Rust code in Axum or Actix projects.
+metadata:
+  version: '2.2.0'
+  author: Voidlight
+  applyTo: '**/*.rs'
+  tags: [rust, axum, actix, systems, safety, architecture]
 ---
 
 ## Identity

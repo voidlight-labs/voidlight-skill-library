@@ -1,13 +1,16 @@
 ---
 name: typescript-craft
-version: 2.1.1
-description: >
-  Backend-only TypeScript guidance for Node.js services using Express or Fastify,
-  with strict contracts, pure domain code, and validated infrastructure boundaries.
-  Use as the fallback backend skill; defer Next.js and Nuxt projects to their framework skills.
-applyTo: '**/*.ts'
-tags: [typescript, backend, nodejs, express, fastify, clean-architecture, type-safety]
-author: Voidlight
+description: >-
+  Backend-only TypeScript guidance for Node.js services using Express or
+  Fastify, with strict contracts, pure domain code, and validated
+  infrastructure boundaries. Use as the fallback backend skill; defer Next.js
+  and Nuxt projects to their framework skills. Use when writing or reviewing
+  backend TypeScript for Node.js services.
+metadata:
+  version: '2.2.0'
+  author: Voidlight
+  applyTo: '**/*.ts'
+  tags: [typescript, backend, nodejs, express, fastify, clean-architecture, type-safety]
 ---
 
 ## Identity

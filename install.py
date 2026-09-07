@@ -149,7 +149,7 @@ def install_gemini(skill_name: str, tmpfile: Path, force: bool = False) -> None:
         f.write("\n\n")
         f.write(f"<!-- Voidlight Skill: {skill_name} -->\n")
         f.write(f"<!-- Source: https://github.com/{REPO_OWNER}/{REPO_NAME} -->\n")
-        f.write("<!-- Version: 2.1.1 -->\n")
+        f.write("<!-- Version: 2.2.0 -->\n")
         f.write("\n")
         f.write(tmpfile.read_text(encoding="utf-8"))
 

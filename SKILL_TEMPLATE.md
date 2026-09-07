@@ -1,11 +1,13 @@
 ---
 name: {language}-craft
-version: 2.1.1
 description: >
-  {One-line description}
-applyTo: '{glob pattern}'
-tags: [{domain}, {quality}, {safety}, {architecture}]
-author: Voidlight
+  {One or two sentences describing what the skill enforces.}
+  {Use when writing or reviewing {language} code in {framework} projects.}
+metadata:
+  version: '2.2.0'
+  author: Voidlight
+  applyTo: '{glob pattern}'
+  tags: [{domain}, {quality}, {safety}, {architecture}]
 ---
 
 ## Identity

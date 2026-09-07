@@ -1,0 +1,10 @@
+{
+  "name": "voidlight-skill-library",
+  "description": "Seven language-craft skills enforcing 2-layer architecture (standard-library-only domain, framework infrastructure) for Java, Python, Rust, TypeScript, Nuxt, and Next.js, plus a Markdown-to-VDL converter skill. Use when writing or reviewing production code in any of these stacks, or when converting Markdown knowledge graphs to VDL.",
+  "version": "2.2.0",
+  "author": { "name": "Voidlight" },
+  "homepage": "https://github.com/voidlight-labs/voidlight-skill-library",
+  "repository": "https://github.com/voidlight-labs/voidlight-skill-library",
+  "license": "MIT",
+  "keywords": ["skills", "architecture", "clean-architecture", "java", "spring", "quarkus", "python", "fastapi", "rust", "axum", "actix", "typescript", "express", "fastify", "nuxt", "vue", "nextjs", "react"]
+}

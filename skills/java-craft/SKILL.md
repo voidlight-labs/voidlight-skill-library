@@ -1,13 +1,15 @@
 ---
 name: java-craft
-version: 2.1.2
-description: >
+description: >-
   Enforces pragmatic 2-layer architecture, domain purity, type safety, and
   modern Spring Boot or Quarkus integration for Java codebases. Value Objects
-  own invariant behavior; external capabilities are declared as Ports.
-applyTo: '**/*.java'
-tags: [java, spring, quarkus, jvm, typesafe, architecture]
-author: Voidlight
+  own invariant behavior; external capabilities are declared as Ports. Use
+  when writing or reviewing Java code in Spring Boot or Quarkus projects.
+metadata:
+  version: '2.2.0'
+  author: Voidlight
+  applyTo: '**/*.java'
+  tags: [java, spring, quarkus, jvm, typesafe, architecture]
 ---
 
 ## Identity

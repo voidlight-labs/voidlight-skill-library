@@ -19,11 +19,13 @@ Thank you for your interest in contributing. This document outlines the process 
 ## Validation Requirements
 
 All skills must pass:
-- Valid YAML frontmatter
+- Valid YAML frontmatter with canonical top-level fields: `name` (must equal the skill directory name) and `description` (trigger-oriented, ends with a "Use when..." sentence)
+- `version`, `author`, `applyTo`, and `tags` nested under `metadata:`, with `version` matching `.claude-plugin/plugin.json`
 - All 7 required sections present
 - Minimum 5 rules
 - DOMAIN/INFRASTRUCTURE LAYER in examples
 - Domain layer has zero framework imports
+- 5 benchmark scenarios (2 Easy, 2 Medium, 1 Hard)
 
 ## 2-Layer Architecture
 

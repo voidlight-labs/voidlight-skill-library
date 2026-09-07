@@ -1,12 +1,14 @@
 ---
 name: python-craft
-version: 2.1.1
-description: >
-  Enforces production-grade, two-layer Python architecture with a standard-library-only
-  domain and typed FastAPI and SQLAlchemy 2.x infrastructure.
-applyTo: '**/*.py'
-tags: [python, fastapi, sqlalchemy, typesafe, architecture, testing]
-author: Voidlight
+description: >-
+  Enforces production-grade, two-layer Python architecture with a standard-
+  library-only domain and typed FastAPI and SQLAlchemy 2.x infrastructure. Use
+  when writing or reviewing Python code in FastAPI projects.
+metadata:
+  version: '2.2.0'
+  author: Voidlight
+  applyTo: '**/*.py'
+  tags: [python, fastapi, sqlalchemy, typesafe, architecture, testing]
 ---
 
 ## Identity
