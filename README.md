@@ -1,4 +1,4 @@
-# Voidlight Skill Library — AI Coding Agent Skills for Clean Architecture
+# Voidlight Skill Library: AI Coding Agent Skills for Clean Architecture
 
 ![Version](https://img.shields.io/badge/version-2.2.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -6,11 +6,11 @@
 ![Skills](https://img.shields.io/badge/skills-7-blueviolet)
 ![Benchmark](https://img.shields.io/badge/benchmark_scenarios-30-orange)
 
-**Voidlight Skill Library** is a collection of 7 production-grade **AI coding agent skills** that enforce strict **2-layer clean architecture** (pure domain, framework infrastructure) across Java, Python, Rust, TypeScript, Nuxt, and Next.js — installable as a plugin in **Claude Code**, **ZCode**, **OpenCode**, and other AI coding agents. Also included: 3 **agent personas** (architect, smith, surveyor) and a 30-scenario **benchmark suite** that scores AI-generated code against the skill rules.
+**Voidlight Skill Library** is a collection of 7 production-grade **AI coding agent skills** that enforce strict **2-layer clean architecture** (pure domain, framework infrastructure) across Java, Python, Rust, TypeScript, Nuxt, and Next.js, installable as a plugin in **Claude Code**, **ZCode**, **OpenCode**, and other AI coding agents. Also included: 3 **agent personas** (architect, smith, surveyor) and a 30-scenario **benchmark suite** that scores AI-generated code against the skill rules.
 
 ## Why
 
-AI code generators produce working code that quietly violates architecture discipline: frameworks leak into domain logic, value objects become anemic, and SRP erodes under feature pressure. Each Voidlight skill acts as a senior architecture reviewer inside your AI agent — it classifies every request into a **domain layer** (standard library only, zero framework imports) and an **infrastructure layer** (frameworks, transports, persistence), then generates or reviews code against a 100-point scoring rubric.
+AI code generators produce working code that quietly violates architecture discipline: frameworks leak into domain logic, value objects become anemic, and SRP erodes under feature pressure. Each Voidlight skill acts as a senior architecture reviewer inside your AI agent: it classifies every request into a **domain layer** (standard library only, zero framework imports) and an **infrastructure layer** (frameworks, transports, persistence), then generates or reviews code against a 100-point scoring rubric.
 
 ## Table of Contents
 
@@ -80,11 +80,11 @@ Every skill ships with: 10 mandatory rules (10 sub-rules each), 15 forbidden pat
 └─────────────────────────────────────────────────────────────┘
 ```
 
-One dependency direction: **infrastructure depends on domain — never the reverse.**
+One dependency direction: **infrastructure depends on domain, never the reverse.**
 
 ## Install as a Plugin (Claude Code, ZCode)
 
-This repo ships as a standard agent plugin with a canonical manifest (`.claude-plugin/plugin.json`). Install it from this GitHub repository or point your agent at the repo path — the harness picks up everything under `skills/` and `agents/` automatically.
+This repo ships as a standard agent plugin with a canonical manifest (`.claude-plugin/plugin.json`). Install it from this GitHub repository or point your agent at the repo path, and the harness picks up everything under `skills/` and `agents/` automatically.
 
 ## Quick Install (Non-Plugin Agents: OpenCode, Kimi, Gemini, Copilot)
 
@@ -124,15 +124,15 @@ Three structured agent identities that enforce the 2-layer discipline at the orc
 
 | Persona | Role |
 |---|---|
-| [`architect`](agents/architect.md) | Cross-language design layer — decision matrices, contracts, stack selection. Never writes implementation code. |
-| [`smith`](agents/smith.md) | Surgical coder — implements design artifacts, verifies builds and tests, reports results faithfully. |
-| [`surveyor`](agents/surveyor.md) | Read-only auditor — reviews architecture compliance, SRP adherence, and code quality. |
+| [`architect`](agents/architect.md) | Cross-language design layer: decision matrices, contracts, stack selection. Never writes implementation code. |
+| [`smith`](agents/smith.md) | Surgical coder: implements design artifacts, verifies builds and tests, reports results faithfully. |
+| [`surveyor`](agents/surveyor.md) | Read-only auditor: reviews architecture compliance, SRP adherence, and code quality. |
 
 ## Quick Start
 
 1. **Install** the skill for your stack (plugin or one-liner above).
-2. **Prompt your agent** normally — the skill auto-applies to matching files (`applyTo` glob per skill).
-3. **Review** — every response ends with a self-score against the 100-point rubric.
+2. **Prompt your agent** normally, the skill auto-applies to matching files (`applyTo` glob per skill).
+3. **Review**: every response ends with a self-score against the 100-point rubric.
 
 ## Benchmark
 
@@ -160,17 +160,17 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). New skills start from [SKILL_TEMPLATE.md
 Any harness that loads markdown skills: Claude Code and ZCode (as a plugin), OpenCode, Kimi Code CLI, Gemini CLI, and GitHub Copilot (via the install scripts).
 
 **Does this work with frameworks I already use?**
-Yes — skills are framework-aware, not framework-hostile. The domain layer stays framework-free; your Spring Boot, FastAPI, Axum, Express, Nuxt, or Next.js code lives in the infrastructure layer.
+Yes, skills are framework-aware, not framework-hostile. The domain layer stays framework-free; your Spring Boot, FastAPI, Axum, Express, Nuxt, or Next.js code lives in the infrastructure layer.
 
 **How is this different from a style guide?**
-Skills are executable instructions for AI agents: they include decision protocols, forbidden patterns, self-scoring, and context detection — not just conventions for humans to read.
+Skills are executable instructions for AI agents: they include decision protocols, forbidden patterns, self-scoring, and context detection, not just conventions for humans to read.
 
 **Can I use just one skill?**
 Yes. Each skill is self-contained in a single `SKILL.md` with no cross-dependencies.
 
 ## License
 
-MIT License — Copyright Voidlight
+MIT License. Copyright Voidlight
 
 ---
 

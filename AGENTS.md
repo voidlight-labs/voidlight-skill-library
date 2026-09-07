@@ -6,7 +6,7 @@ Documentation/knowledge repo, not a code project. No build system, no CI/CD, no 
 
 ## Plugin Packaging
 
-The repo ships as a standard agent plugin (`.claude-plugin/plugin.json`, compatible with Claude Code and ZCode). The manifest `version` is the single source of truth — skill frontmatters carry the same version under `metadata.version`. Skill frontmatter uses the canonical top-level fields `name` + `description` only; `version`, `author`, `applyTo`, and `tags` live under `metadata`.
+The repo ships as a standard agent plugin (`.claude-plugin/plugin.json`, compatible with Claude Code and ZCode). The manifest `version` is the single source of truth: skill frontmatters carry the same version under `metadata.version`. Skill frontmatter uses the canonical top-level fields `name` + `description` only; `version`, `author`, `applyTo`, and `tags` live under `metadata`.
 
 ## Directory Map
 
