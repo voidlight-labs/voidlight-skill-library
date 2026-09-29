@@ -6,5 +6,6 @@
   "homepage": "https://github.com/voidlight-labs/voidlight-skill-library",
   "repository": "https://github.com/voidlight-labs/voidlight-skill-library",
   "license": "MIT",
-  "keywords": ["skills", "architecture", "clean-architecture", "java", "spring", "quarkus", "python", "fastapi", "rust", "axum", "actix", "typescript", "express", "fastify", "nuxt", "vue", "nextjs", "react", "prd", "planning", "product", "process", "routing"]
+  "keywords": ["skills", "architecture", "clean-architecture", "java", "spring", "quarkus", "python", "fastapi", "rust", "axum", "actix", "typescript", "express", "fastify", "nuxt", "vue", "nextjs", "react", "prd", "planning", "product", "process", "routing"],
+  "skills": "./skills"
 }

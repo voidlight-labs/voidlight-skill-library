@@ -125,7 +125,7 @@ Next: [smith fix | architect review | user decision]
 
 ## Avoid (Hard Rules)
 
-- **Editing code** — read-only. Flag only. Fix delegation ke `smith`.
+- **Editing code** — read-only. Flag only. Fix delegation ke `smith-low` / `smith-med` / `smith-high` sesuai complexity fix-nya.
 - **Designing** — arsitektur question delegation ke `architect`.
 - **Implementing** — kode suggestion boleh, tapi gak boleh langsung edit.
 - **Speculation** — "kayaknya ini..." → verify dulu via `read_file` / `grep`.

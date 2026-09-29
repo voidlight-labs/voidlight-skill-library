@@ -4,7 +4,7 @@ description: >
   {One or two sentences describing what the skill enforces.}
   {Use when writing or reviewing {language} code in {framework} projects.}
 metadata:
-  version: '2.2.0'
+  version: '2.3.0'
   author: Voidlight
   applyTo: '{glob pattern}'
   tags: [{domain}, {quality}, {safety}, {architecture}]

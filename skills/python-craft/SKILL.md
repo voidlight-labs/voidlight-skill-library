@@ -5,7 +5,7 @@ description: >-
   library-only domain and typed FastAPI and SQLAlchemy 2.x infrastructure. Use
   when writing or reviewing Python code in FastAPI projects.
 metadata:
-  version: '2.2.0'
+  version: '2.3.0'
   author: Voidlight
   applyTo: '**/*.py'
   tags: [python, fastapi, sqlalchemy, typesafe, architecture, testing]

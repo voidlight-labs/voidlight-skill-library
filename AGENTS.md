@@ -14,7 +14,10 @@ The repo ships as a standard agent plugin (`.claude-plugin/plugin.json`, compati
 |------|------|
 | `.claude-plugin/plugin.json` | Plugin manifest (name, version, description, author, license). Single source of truth for version. |
 | `skills/{lang}-craft/SKILL.md` | One per language (7 total). Self-contained AI skill specs loaded by agents. |
-| `agents/{persona}.md` | 3 persona definitions (architect, smith, surveyor). Subagent identity specs. |
+| `skills/markdown-to-vdl/SKILL.md` | Process skill: Markdown → VDL conversion. |
+| `skills/prd-craft/SKILL.md` | Process skill: PRD-first gate (interview → PRD artifact → approval gate → subagent routing by task size). |
+| `skills/craft-router/SKILL.md` | Process skill: task → {lang}-craft skill routing (file glob, manifest, framework markers). |
+| `agents/{persona}.md` | 7 persona definitions (architect, smith, smith-low/med/high, surveyor, explorer). Subagent identity specs. |
 | `benchmark/benchmark.py` | Python script evaluating AI-generated code against skill rules. |
 | `benchmark/scenarios/{lang}/scenario-{NN}-{difficulty}.md` | 30 total (5 per skill). Input files for the benchmark. |
 | `SKILL_TEMPLATE.md` | Canonical template for creating new skills. |
@@ -35,19 +38,23 @@ python benchmark.py --format csv
 
 Benchmark scenarios live in `benchmark/scenarios/{lang}/`. Requires `pyyaml` and `markdown`.
 
-## Skill File Anatomy (must match exactly)
+## Skill File Anatomy
 
-Every `skills/*/SKILL.md` must contain:
-- Valid YAML frontmatter (`name`, `version`, `description`, `applyTo`, `tags`, `author`)
-- 10 Mandatory Rules with 10 sub-rules each
-- 15 Forbidden Patterns
-- 6-step Thinking Protocol
-- 10 Response Rules
-- 8 Context Awareness items
-- Scoring Rubric (7 categories, 100 points)
-- Minimum 2 complete 2-layer architecture examples
+Two skill categories live in this repo:
 
-The canonical reference is `skills/python-craft/SKILL.md`. When creating a new skill, start from `SKILL_TEMPLATE.md`.
+- **Craft skills** (`{lang}-craft`): must match the canonical anatomy exactly:
+  - Valid YAML frontmatter (`name`, `description`, plus `metadata.version`, `metadata.author`, `metadata.applyTo`, `metadata.tags`)
+  - 10 Mandatory Rules with 10 sub-rules each
+  - 15 Forbidden Patterns
+  - 6-step Thinking Protocol
+  - 10 Response Rules
+  - 8 Context Awareness items
+  - Scoring Rubric (7 categories, 100 points)
+  - Minimum 2 complete 2-layer architecture examples
+
+  The canonical reference is `skills/python-craft/SKILL.md`. When creating a new craft skill, start from `SKILL_TEMPLATE.md`.
+
+- **Process skills** (`markdown-to-vdl`, `prd-craft`, `craft-router`): thinner instruction skills (gates, checklists, output contracts, routing). No rules-and-rubric anatomy required; no benchmark scenarios required (benchmark.py only covers craft skills). Frontmatter convention is the same.
 
 ## Architecture Principle (2-Layer)
 
@@ -78,6 +85,8 @@ New skills or edits must pass:
 | `nuxt-craft` | `**/*.{vue,ts}` | Nuxt 3, Vue 3 |
 | `nextjs-craft` | `**/*.{tsx,ts}` | Next.js App Router |
 | `markdown-to-vdl` | `**/*.md` | VDL (Voidlight Definition Language) |
+| `prd-craft` | `**/*` | None (process skill, hook-invoked at chat start) |
+| `craft-router` | `**/*` | None (process skill, invoked during prd-craft routing) |
 
 ## Install Script
 
@@ -104,7 +113,7 @@ Both scripts are read-only (no `sudo`, no `rm -rf`, no arbitrary code execution)
 
 ## Notes
 
-- Version shared across all skills: `2.2.0` (source of truth: `.claude-plugin/plugin.json`). Keep in sync.
+- Version shared across all skills: `2.3.0` (source of truth: `.claude-plugin/plugin.json`). Keep in sync.
 - In Next.js or Nuxt projects, use the framework skill instead of `typescript-craft`; the latter is backend-only.
 - No CI workflows. No pre-commit hooks.
 - The repo does not contain actual application code — only markdown specifications.

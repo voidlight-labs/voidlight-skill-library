@@ -1,12 +1,12 @@
 # Voidlight Skill Library: AI Coding Agent Skills for Clean Architecture
 
-![Version](https://img.shields.io/badge/version-2.2.0-blue)
+![Version](https://img.shields.io/badge/version-2.3.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Status](https://img.shields.io/badge/status-active-brightgreen)
-![Skills](https://img.shields.io/badge/skills-7-blueviolet)
+![Skills](https://img.shields.io/badge/skills-9-blueviolet)
 ![Benchmark](https://img.shields.io/badge/benchmark_scenarios-30-orange)
 
-**Voidlight Skill Library** is a collection of 7 production-grade **AI coding agent skills** that enforce strict **2-layer clean architecture** (pure domain, framework infrastructure) across Java, Python, Rust, TypeScript, Nuxt, and Next.js, installable as a plugin in **Claude Code**, **ZCode**, **OpenCode**, and other AI coding agents. Also included: 3 **agent personas** (architect, smith, surveyor) and a 30-scenario **benchmark suite** that scores AI-generated code against the skill rules.
+**Voidlight Skill Library** is a collection of 7 production-grade **AI coding agent skills** that enforce strict **2-layer clean architecture** (pure domain, framework infrastructure) across Java, Python, Rust, TypeScript, Nuxt, and Next.js, installable as a plugin in **Claude Code**, **ZCode**, **OpenCode**, and other AI coding agents. Also included: a **prd-craft** process skill (PRD-first gate with subagent routing by task size), 3 **agent personas** (architect, smith, surveyor), and a 30-scenario **benchmark suite** that scores AI-generated code against the skill rules.
 
 ## Why
 
@@ -36,8 +36,10 @@ AI code generators produce working code that quietly violates architecture disci
 | [`nuxt-craft`](skills/nuxt-craft/SKILL.md) | `**/*.{vue,ts}` | Nuxt 3/4, Vue 3 | SSR-safe layering, version-aware practices |
 | [`nextjs-craft`](skills/nextjs-craft/SKILL.md) | `**/*.{tsx,ts}` | Next.js App Router | Server/client split, dependency-free domain |
 | [`markdown-to-vdl`](skills/markdown-to-vdl/SKILL.md) | `**/*.md` | VDL | Markdown → knowledge graph conversion |
+| [`prd-craft`](skills/prd-craft/SKILL.md) | `**/*` (process skill) | — | PRD-first gate: interview, PRD artifact, approval gate, subagent routing by task size |
+| [`craft-router`](skills/craft-router/SKILL.md) | `**/*` (process skill) | — | Task → {lang}-craft skill routing by file glob, manifest, and framework markers |
 
-Every skill ships with: 10 mandatory rules (10 sub-rules each), 15 forbidden patterns, a 6-step thinking protocol, 10 response rules, 8 context-awareness checks, a 7-category scoring rubric (100 points), and complete 2-layer architecture examples.
+The seven language-craft skills ship with: 10 mandatory rules (10 sub-rules each), 15 forbidden patterns, a 6-step thinking protocol, 10 response rules, 8 context-awareness checks, a 7-category scoring rubric (100 points), and complete 2-layer architecture examples. The two process skills (`markdown-to-vdl`, `prd-craft`) are thinner instruction skills: gates, checklists, and output contracts instead of rules-and-rubric.
 
 ## Architecture Principle: 2-Layer Pragmatic Clean Architecture
 
@@ -120,13 +122,17 @@ Both installers are read-only (no `sudo`, no `rm -rf`, no arbitrary code executi
 
 ## Agent Personas
 
-Three structured agent identities that enforce the 2-layer discipline at the orchestration level:
+Three structured agent identities that enforce the 2-layer discipline at the orchestration level, plus specialized subagents for the prd-craft routing flow:
 
 | Persona | Role |
 |---|---|
-| [`architect`](agents/architect.md) | Cross-language design layer: decision matrices, contracts, stack selection. Never writes implementation code. |
-| [`smith`](agents/smith.md) | Surgical coder: implements design artifacts, verifies builds and tests, reports results faithfully. |
+| [`architect`](agents/architect.md) | Cross-language design layer: decision matrices, contracts, stack selection. Never writes implementation code. Activates only after a prd-craft PRD is approved. |
+| [`smith`](agents/smith.md) | Surgical coder (generic): implements design artifacts, verifies builds and tests, reports results faithfully. Routes labeled tasks to the smith tiers. |
 | [`surveyor`](agents/surveyor.md) | Read-only auditor: reviews architecture compliance, SRP adherence, and code quality. |
+| [`explorer`](agents/explorer.md) | Read-only explorer: locates symbols, maps structure, reports facts with file:line references. Never edits, builds, or tests. |
+| [`smith-low`](agents/smith-low.md) / [`smith-med`](agents/smith-med.md) / [`smith-high`](agents/smith-high.md) | Implementation tiers by complexity score (0-4 / 5-8 / 9-15): verbatim single-component execution → multi-file feature work → cross-module solution-finding. |
+
+The smith tiers are sized by a 5-dimension complexity matrix (Decision Density, Dependency Surface, Blast Radius, Verification Difficulty, Residual Ambiguity), defined in [`prd-craft`](skills/prd-craft/SKILL.md) and applied by [`craft-router`](skills/craft-router/SKILL.md) when routing tasks.
 
 ## Quick Start
 

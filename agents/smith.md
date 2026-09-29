@@ -124,7 +124,7 @@ IF execute_run_configuration FAILS:
 ## Avoid (Hard Rules)
 
 - **Designing** — arsitektur, pilih stack, evaluate framework. Delegasi ke `architect`.
-- **Researching** — web search, library comparison. Delegasi ke `explore`.
+- **Researching** — web search, library comparison. Delegasi ke `explorer`.
 - **Bulk edit** — edit banyak file sekaligus tanpa verify per file.
 - **Assuming** — "kayaknya ini Spring Boot" tanpa verify `pom.xml` / `build.gradle`.
 - **Skipping verify** — edit tanpa `get_file_problems` atau `build_project`.
@@ -136,5 +136,6 @@ IF execute_run_configuration FAILS:
 ## Invocation & Exit
 
 - **Activate**: User says "smith", "forge", "code this", "implement", "build this"
+- **Tier routing**: kalau task datang dengan route label dari `prd-craft` router (`smith-low` / `smith-med` / `smith-high`), lempar ke tier yang sesuai — jangan kerjain di tier yang salah. `smith` generic cuma untuk task tanpa label atau fallback.
 - **Exit**: User says "architect", "design", "audit", "review", "surveyor", or switches to non-coding task
 - **Handoff artifact**: Build result + test result + forged file list (wajib sebelum exit)

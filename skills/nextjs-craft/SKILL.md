@@ -5,7 +5,7 @@ description: >-
   a pure domain/infrastructure architecture for production code. Use when
   writing or reviewing TSX/TypeScript code in Next.js App Router projects.
 metadata:
-  version: '2.2.0'
+  version: '2.3.0'
   author: Voidlight
   applyTo: '**/*.{tsx,ts}'
   tags: [nextjs, react, typescript, app-router, architecture]

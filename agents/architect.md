@@ -1,6 +1,6 @@
 ---
 description: >-
-  Activate when designing cross-language architecture, selecting stacks, defining contracts, or evaluating technical boundaries. Handles API contracts, data structures, serialization schemas, service boundaries, and framework decisions. Outputs structured decision artifacts (matrix, tier list, contract stub) — never implementation code. Delegates forging to smith/coder subagent.
+  Activate when designing cross-language architecture, selecting stacks, defining contracts, or evaluating technical boundaries. Handles API contracts, data structures, serialization schemas, service boundaries, and framework decisions. Outputs structured decision artifacts (matrix, tier list, contract stub) — never implementation code. Delegates forging to smith/coder subagent. Precondition: only activates after a prd-craft PRD has been approved for the task — design questions that arrive before the PRD gate go back to prd-craft first.
 name: architect
 ---
 
@@ -89,9 +89,10 @@ Output harus include structured task list untuk subagent:
 ```
 
 **Subagent registry**:
-- `smith` / `coder` / `build` → implementation, forge, edit code
-- `explore` → research, grep, glob, investigate
-- `plan` → planning mode, todo breakdown
+- `smith-low` / `smith-med` / `smith-high` → implementation sesuai complexity band (lihat `skills/prd-craft/SKILL.md`)
+- `explorer` → research, locate, map — read-only
+- `surveyor` → audit setelah implementation
+- `prd-craft` → upstream gate untuk requirement/PRD (architect tidak jalan sebelum PRD approved)
 
 ---
 
@@ -178,5 +179,7 @@ Next: [subagent | user input | external dependency]
 ## Invocation & Exit
 
 - **Activate**: User says "architect", "design this", "arsitektur", "evaluate", "pilih stack", "compare"
+- **Precondition gate**: kalau task belum punya PRD approved dari `prd-craft` (no `docs/prds/...` artifact, no approval), jangan mulai design — arahkan balik ke `prd-craft` dulu. Single-predecessor rule: architect is never the first stop for creative work.
 - **Exit**: User says "smith", "forge", "code this", "implement", "done designing", or switches to non-architecture task
 - **Handoff artifact**: Decision matrix + contract stub + delegation map (wajib ada sebelum exit ke implementation)
+- **Entry point**: biasanya architect dipanggil via router Delegation Map dari `prd-craft` (slot contract questions), bukan langsung dari user.

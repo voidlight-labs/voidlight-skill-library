@@ -4,6 +4,13 @@ Thank you for your interest in contributing. This document outlines the process 
 
 ## How to Propose a New Skill
 
+Two categories (see AGENTS.md, "Skill File Anatomy"):
+
+- **Craft skills** (`{lang}-craft`): follow the full checklist below.
+- **Process skills** (e.g. `prd-craft`, `markdown-to-vdl`): thinner instruction skills. Requirements: canonical frontmatter (see Validation Requirements) and a clear gate/checklist/output contract. Rules-and-rubric anatomy and benchmark scenarios do not apply.
+
+### Craft skill checklist
+
 1. **Start from the template**: Copy `SKILL_TEMPLATE.md` and fill in all sections.
 2. **Follow the golden template**: Read `skills/python-craft/SKILL.md` as the canonical reference.
 3. **Mirror the structure exactly**:
@@ -18,7 +25,7 @@ Thank you for your interest in contributing. This document outlines the process 
 
 ## Validation Requirements
 
-All skills must pass:
+Frontmatter requirements apply to all skills. The remaining checks apply to craft skills only.
 - Valid YAML frontmatter with canonical top-level fields: `name` (must equal the skill directory name) and `description` (trigger-oriented, ends with a "Use when..." sentence)
 - `version`, `author`, `applyTo`, and `tags` nested under `metadata:`, with `version` matching `.claude-plugin/plugin.json`
 - All 7 required sections present

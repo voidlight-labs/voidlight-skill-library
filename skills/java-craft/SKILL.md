@@ -6,7 +6,7 @@ description: >-
   own invariant behavior; external capabilities are declared as Ports. Use
   when writing or reviewing Java code in Spring Boot or Quarkus projects.
 metadata:
-  version: '2.2.0'
+  version: '2.3.0'
   author: Voidlight
   applyTo: '**/*.java'
   tags: [java, spring, quarkus, jvm, typesafe, architecture]
