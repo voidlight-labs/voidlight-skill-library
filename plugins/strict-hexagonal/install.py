@@ -22,8 +22,9 @@ import urllib.request
 from pathlib import Path
 
 REPO_OWNER = "voidlight-labs"
-REPO_NAME = "voidlight-skill-library"
+REPO_NAME = "voidlight-plugin-library"
 BRANCH = "main"
+PLUGIN_DIR = "plugins/strict-hexagonal"
 RAW_BASE = f"https://raw.githubusercontent.com/{REPO_OWNER}/{REPO_NAME}/{BRANCH}"
 
 SKILLS = [
@@ -91,7 +92,7 @@ def detect_agent(args_agent: str | None = None) -> str:
 
 
 def get_skill_url(skill_name: str) -> str:
-    return f"{RAW_BASE}/skills/{skill_name}/SKILL.md"
+    return f"{RAW_BASE}/{PLUGIN_DIR}/skills/{skill_name}/SKILL.md"
 
 
 def download_skill(skill_name: str) -> Path:
@@ -151,7 +152,7 @@ def install_gemini(skill_name: str, tmpfile: Path, force: bool = False) -> None:
         f.write("\n\n")
         f.write(f"<!-- Voidlight Skill: {skill_name} -->\n")
         f.write(f"<!-- Source: https://github.com/{REPO_OWNER}/{REPO_NAME} -->\n")
-        f.write("<!-- Version: 2.3.0 -->\n")
+        f.write("<!-- Version: 3.0.0 -->\n")
         f.write("\n")
         f.write(tmpfile.read_text(encoding="utf-8"))
 

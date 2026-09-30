@@ -7,7 +7,7 @@ description: >-
   and Nuxt projects to their framework skills. Use when writing or reviewing
   backend TypeScript for Node.js services.
 metadata:
-  version: '2.3.0'
+  version: '3.0.0'
   author: Voidlight
   applyTo: '**/*.ts'
   tags: [typescript, backend, nodejs, express, fastify, clean-architecture, type-safety]

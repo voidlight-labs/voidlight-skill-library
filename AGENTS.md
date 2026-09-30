@@ -1,32 +1,40 @@
-# Voidlight Skill Library — AGENTS.md
+# Voidlight Plugin Library — AGENTS.md
 
 ## Repo Type
 
-Documentation/knowledge repo, not a code project. No build system, no CI/CD, no test suite. The only executable code is the benchmark runner.
+Documentation/knowledge repo, not a code project. No build system, no CI/CD, no test suite. The only executable code is the benchmark runner inside the strict-hexagonal plugin.
 
-## Plugin Packaging
+## Repository Layout
 
-The repo ships as a standard agent plugin (`.claude-plugin/plugin.json`, compatible with Claude Code and ZCode). The manifest `version` is the single source of truth: skill frontmatters carry the same version under `metadata.version`. Skill frontmatter uses the canonical top-level fields `name` + `description` only; `version`, `author`, `applyTo`, and `tags` live under `metadata`.
+This repo is a plugin library. The root `marketplace.json` is the ZCode plugin catalog; each folder under `plugins/` is a self-contained, installable agent plugin (dual manifests: `.zcode-plugin/plugin.json` for ZCode, `.claude-plugin/plugin.json` for Claude Code, kept in sync).
 
 ## Directory Map
 
 | Path | What |
 |------|------|
-| `.claude-plugin/plugin.json` | Plugin manifest (name, version, description, author, license). Single source of truth for version. |
-| `skills/{lang}-craft/SKILL.md` | One per language (7 total). Self-contained AI skill specs loaded by agents. |
-| `skills/markdown-to-vdl/SKILL.md` | Process skill: Markdown → VDL conversion. |
-| `skills/prd-craft/SKILL.md` | Process skill: PRD-first gate (interview → PRD artifact → approval gate → subagent routing by task size). |
-| `skills/craft-router/SKILL.md` | Process skill: task → {lang}-craft skill routing (file glob, manifest, framework markers). |
-| `agents/{persona}.md` | 7 persona definitions (architect, smith, smith-low/med/high, surveyor, explorer). Subagent identity specs. |
+| `marketplace.json` | Root plugin catalog (ZCode native format). Single entry point for listing plugins. |
+| `README.md`, `CONTRIBUTING.md` | Library-level docs: plugin table, how to add a plugin. |
+| `plugins/strict-hexagonal/` | The original skill library, now packaged as the strict-hexagonal plugin. |
+
+### Inside `plugins/strict-hexagonal/`
+
+| Path | What |
+|------|------|
+| `.zcode-plugin/plugin.json`, `.claude-plugin/plugin.json` | Plugin manifests. The manifest `version` is the single source of truth; skill frontmatters carry the same version under `metadata.version`. |
+| `skills/{name}/SKILL.md` | One per skill (9 total: 6 craft, 3 process). Self-contained AI skill specs loaded by agents. |
+| `agents/{persona}.md` | 7 persona definitions (architect, smith, smith-low/med/high, surveyor, explorer). Subagent identity specs. Shipped as undeclared files: the ZCode manifest has no agents component. |
 | `benchmark/benchmark.py` | Python script evaluating AI-generated code against skill rules. |
-| `benchmark/scenarios/{lang}/scenario-{NN}-{difficulty}.md` | 30 total (5 per skill). Input files for the benchmark. |
+| `benchmark/scenarios/{lang}/scenario-{NN}-{difficulty}.md` | 30 total (5 per craft skill). Input files for the benchmark. |
+| `docs/INSTALL.md` | Install targets and options. |
+| `install.sh` / `install.py` | Installers. Download skills via `raw.githubusercontent.com/<owner>/<repo>/main/plugins/strict-hexagonal/skills/...`. |
 | `SKILL_TEMPLATE.md` | Canonical template for creating new skills. |
+| `README.md` / `CONTRIBUTING.md` | Plugin-level docs and validation rules. |
 
 ## Commands
 
 ```bash
 # Run benchmark (all skills)
-cd benchmark && pip install -r requirements.txt && python benchmark.py
+cd plugins/strict-hexagonal/benchmark && pip install -r requirements.txt && python benchmark.py
 
 # Run single skill
 python benchmark.py --skill python-craft
@@ -36,11 +44,11 @@ python benchmark.py --format json
 python benchmark.py --format csv
 ```
 
-Benchmark scenarios live in `benchmark/scenarios/{lang}/`. Requires `pyyaml` and `markdown`.
+Benchmark scenarios live in `plugins/strict-hexagonal/benchmark/scenarios/{lang}/`. Requires `pyyaml` and `markdown`.
 
 ## Skill File Anatomy
 
-Two skill categories live in this repo:
+Two skill categories live in the strict-hexagonal plugin:
 
 - **Craft skills** (`{lang}-craft`): must match the canonical anatomy exactly:
   - Valid YAML frontmatter (`name`, `description`, plus `metadata.version`, `metadata.author`, `metadata.applyTo`, `metadata.tags`)
@@ -58,13 +66,13 @@ Two skill categories live in this repo:
 
 ## Architecture Principle (2-Layer)
 
-Every skill enforces this split:
+Every craft skill enforces this split:
 - **Domain Layer** (`domain/`): Pure standard library only. Zero framework imports.
 - **Infrastructure Layer** (`infrastructure/`): Framework code allowed. Implements domain ports.
 
-This is documented in `README.md` and `CONTRIBUTING.md`. Do not repeat it in agent responses — the skill files already define it.
+This is documented in the plugin's `README.md` and `CONTRIBUTING.md`. Do not repeat it in agent responses — the skill files already define it.
 
-## Validation Rules (from CONTRIBUTING.md)
+## Validation Rules (from the plugin's CONTRIBUTING.md)
 
 New skills or edits must pass:
 - Valid YAML frontmatter
@@ -85,36 +93,18 @@ New skills or edits must pass:
 | `nuxt-craft` | `**/*.{vue,ts}` | Nuxt 3, Vue 3 |
 | `nextjs-craft` | `**/*.{tsx,ts}` | Next.js App Router |
 | `markdown-to-vdl` | `**/*.md` | VDL (Voidlight Definition Language) |
-| `prd-craft` | `**/*` | None (process skill, hook-invoked at chat start) |
+| `prd-craft` | `**/*` | None (process skill, invoked at chat start) |
 | `craft-router` | `**/*` | None (process skill, invoked during prd-craft routing) |
 
-## Install Script
+## Versioning
 
-Two installers are provided for quick deployment to agent environments:
-
-- **`install.sh`** — POSIX shell script. Primary installer for Linux/macOS/WSL.
-- **`install.py`** — Python 3 script. Cross-platform fallback (Windows, restricted environments).
-
-### Agent Install Targets
-
-| Agent | Default Path | Format | `--agent` value |
-|---|---|---|---|
-| OpenCode | `~/.agents/skills/{name}/SKILL.md` | Native | `opencode` |
-| Kimi Code CLI | `~/.kimi-code/skills/{name}/SKILL.md` | Native | `kimi` |
-| Gemini CLI | `~/.gemini/GEMINI.md` (append) | Native/Compact | `gemini` |
-| Claude (project) | `CLAUDE.md` (project root) | Extracted rules | `claude` |
-| GitHub Copilot | `.github/copilot-instructions.md` | Extracted rules | `codex` |
-
-Auto-detect priority: OpenCode → Kimi → Gemini → Claude → Codex → stdout paste.
-
-### Security
-
-Both scripts are read-only (no `sudo`, no `rm -rf`, no arbitrary code execution). They download SKILL.md files from `raw.githubusercontent.com` and write them to the detected agent path. Prompt before overwrite unless `--force` is passed.
+- The strict-hexagonal plugin is at `3.0.0` (source of truth: `plugins/strict-hexagonal/.zcode-plugin/plugin.json`). Keep both manifests and skill frontmatters in sync.
+- The GitHub repository is `voidlight-labs/voidlight-plugin-library`.
 
 ## Notes
 
-- Version shared across all skills: `2.3.0` (source of truth: `.claude-plugin/plugin.json`). Keep in sync.
 - In Next.js or Nuxt projects, use the framework skill instead of `typescript-craft`; the latter is backend-only.
 - No CI workflows. No pre-commit hooks.
 - The repo does not contain actual application code — only markdown specifications.
-- When adding a benchmark scenario, place it in the correct `benchmark/scenarios/{lang}/` directory.
+- When adding a benchmark scenario, place it in the correct `plugins/strict-hexagonal/benchmark/scenarios/{lang}/` directory.
+- New plugins go in `plugins/<name>/` with an entry in the root `marketplace.json`.

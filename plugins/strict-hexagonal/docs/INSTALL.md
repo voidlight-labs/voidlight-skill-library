@@ -13,13 +13,13 @@ Quick install Voidlight skills to your AI coding agent.
 ### One-liner (Linux/macOS/WSL)
 
 ```bash
-curl -sL https://raw.githubusercontent.com/voidlight-labs/voidlight-skill-library/main/install.sh | bash -s -- python-craft
+curl -sL https://raw.githubusercontent.com/voidlight-labs/voidlight-plugin-library/main/install.sh | bash -s -- python-craft
 ```
 
 ### One-liner (Cross-platform, including Windows)
 
 ```bash
-python -c "$(curl -sL https://raw.githubusercontent.com/voidlight-labs/voidlight-skill-library/main/install.py)" python-craft
+python -c "$(curl -sL https://raw.githubusercontent.com/voidlight-labs/voidlight-plugin-library/main/install.py)" python-craft
 ```
 
 > **Security note:** Both scripts are read-only. They only download `.md` files and write them to your agent's skill directory. No `sudo`, no `rm -rf`, no arbitrary code execution. If you prefer, download and inspect first:
@@ -141,7 +141,7 @@ curl -sL ... | bash -s -- --agent codex python-craft
 ### Install all skills for OpenCode
 
 ```bash
-curl -sL https://raw.githubusercontent.com/voidlight-labs/voidlight-skill-library/main/install.sh | bash -s -- --all
+curl -sL https://raw.githubusercontent.com/voidlight-labs/voidlight-plugin-library/main/install.sh | bash -s -- --all
 ```
 
 ### Update a specific skill
@@ -205,7 +205,7 @@ If scripts don't work, manually copy the skill file:
 
 ```bash
 # Download skill
-curl -sL https://raw.githubusercontent.com/voidlight-labs/voidlight-skill-library/main/skills/python-craft/SKILL.md > python-craft.md
+curl -sL https://raw.githubusercontent.com/voidlight-labs/voidlight-plugin-library/main/skills/python-craft/SKILL.md > python-craft.md
 
 # OpenCode: copy to skill directory
 mkdir -p ~/.agents/skills/python-craft

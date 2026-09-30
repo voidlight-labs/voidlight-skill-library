@@ -6,7 +6,8 @@
 set -e
 
 REPO_OWNER="voidlight-labs"
-REPO_NAME="voidlight-skill-library"
+REPO_NAME="voidlight-plugin-library"
+PLUGIN_DIR="plugins/strict-hexagonal"
 BRANCH="main"
 RAW_BASE="https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${BRANCH}"
 
@@ -105,7 +106,7 @@ detect_agent() {
 
 get_skill_url() {
     skill_name="$1"
-    echo "${RAW_BASE}/skills/${skill_name}/SKILL.md"
+    echo "${RAW_BASE}/${PLUGIN_DIR}/skills/${skill_name}/SKILL.md"
 }
 
 download_skill() {
@@ -188,7 +189,7 @@ install_gemini() {
         printf "\n\n"
         printf "<!-- Voidlight Skill: %s -->\n" "$skill_name"
         printf "<!-- Source: https://github.com/%s/%s -->\n" "$REPO_OWNER" "$REPO_NAME"
-        printf "<!-- Version: 2.3.0 -->\n"
+        printf "<!-- Version: 3.0.0 -->\n"
         printf "\n"
         cat "$tmpfile"
     } >> "$target_file"

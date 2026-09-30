@@ -7,7 +7,7 @@ description: >-
   emits one route entry per task per language. Invoke during the prd-craft
   routing phase, after task sizing, before dispatching to a smith tier.
 metadata:
-  version: '2.3.0'
+  version: '3.0.0'
   author: Voidlight
   applyTo: '**/*'
   tags: [routing, craft, language, process, voidlight]
