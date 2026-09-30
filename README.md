@@ -1,6 +1,6 @@
 # Voidlight Plugin Library
 
-A library of agent plugins by Voidlight. Each folder under `plugins/` is an installable agent plugin (compatible with Claude Code and ZCode). The root `marketplace.json` is the catalog: install the whole library as a plugin marketplace, or consume plugins individually.
+A library of agent plugins by Voidlight. Each folder under `plugins/` is an installable agent plugin (compatible with Claude Code and ZCode). The catalogs are dual and kept in sync: root `marketplace.json` (ZCode) and `.claude-plugin/marketplace.json` (Claude Code). Install the whole library as a plugin marketplace in either tool, or consume plugins individually.
 
 ## Plugins
 
@@ -12,11 +12,13 @@ A library of agent plugins by Voidlight. Each folder under `plugins/` is an inst
 
 ```
 voidlight-plugin-library/
-├── marketplace.json              # Root plugin catalog (ZCode native format)
+├── marketplace.json              # Plugin catalog (ZCode native format)
+├── .claude-plugin/marketplace.json  # Plugin catalog (Claude Code format)
 ├── plugins/
 │   └── strict-hexagonal/         # One self-contained plugin per folder
 │       ├── .zcode-plugin/plugin.json
 │       ├── .claude-plugin/plugin.json
+│       ├── assets/               # Icon and visual assets
 │       ├── skills/               # SKILL.md per skill
 │       ├── agents/               # Subagent persona definitions
 │       ├── benchmark/            # Benchmark runner + scenarios
@@ -47,7 +49,7 @@ See [plugins/strict-hexagonal/docs/INSTALL.md](plugins/strict-hexagonal/docs/INS
 ## Adding a plugin
 
 1. Create `plugins/<plugin-name>/` with a `.zcode-plugin/plugin.json` (and optionally `.claude-plugin/plugin.json`). The folder name must match the manifest `name`.
-2. Add an entry to the root `marketplace.json`.
+2. Add entries to both catalogs (`marketplace.json` and `.claude-plugin/marketplace.json`) with matching `name`, `version`, `description`, a relative `source` path, and an `icon` URL.
 3. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Versioning

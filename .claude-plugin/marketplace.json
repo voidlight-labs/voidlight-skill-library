@@ -1,15 +1,18 @@
 {
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "voidlight-plugin-library",
+  "description": "Voidlight plugin library: strict 2-layer hexagonal architecture craft skills for six stacks, plus VDL and process skills.",
   "owner": { "name": "Voidlight" },
   "plugins": [
     {
       "name": "strict-hexagonal",
       "source": "./plugins/strict-hexagonal",
-      "version": "3.0.0",
       "description": "Six language-craft skills enforcing strict 2-layer hexagonal architecture (standard-library-only domain, framework infrastructure) for Java, Python, Rust, TypeScript, Nuxt, and Next.js, plus a Markdown-to-VDL converter skill and two process skills: prd-craft (PRD-first gate with complexity-scored subagent routing) and craft-router (task to language-craft skill routing). Use when writing or reviewing production code in any of these stacks, converting Markdown knowledge graphs to VDL, or starting any feature or implementation request.",
-      "displayName": "Strict Hexagonal",
-      "icon": "https://raw.githubusercontent.com/voidlight-labs/voidlight-plugin-library/main/plugins/strict-hexagonal/assets/icon.png",
-      "category": "developer-tools"
+      "version": "3.0.0",
+      "author": { "name": "Voidlight" },
+      "category": "development",
+      "homepage": "https://github.com/voidlight-labs/voidlight-plugin-library",
+      "icon": "https://raw.githubusercontent.com/voidlight-labs/voidlight-plugin-library/main/plugins/strict-hexagonal/assets/icon.png"
     }
   ]
 }

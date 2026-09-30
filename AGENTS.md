@@ -6,13 +6,14 @@ Documentation/knowledge repo, not a code project. No build system, no CI/CD, no 
 
 ## Repository Layout
 
-This repo is a plugin library. The root `marketplace.json` is the ZCode plugin catalog; each folder under `plugins/` is a self-contained, installable agent plugin (dual manifests: `.zcode-plugin/plugin.json` for ZCode, `.claude-plugin/plugin.json` for Claude Code, kept in sync).
+This repo is a plugin library. Plugin catalogs are dual and kept in sync: root `marketplace.json` (ZCode native format) and `.claude-plugin/marketplace.json` (Claude Code format); each folder under `plugins/` is a self-contained, installable agent plugin (dual manifests: `.zcode-plugin/plugin.json` for ZCode, `.claude-plugin/plugin.json` for Claude Code, kept in sync).
 
 ## Directory Map
 
 | Path | What |
 |------|------|
 | `marketplace.json` | Root plugin catalog (ZCode native format). Single entry point for listing plugins. |
+| `.claude-plugin/marketplace.json` | Plugin catalog for Claude Code. Mirrors the root catalog: same plugins, `name`, `version`, `description`, relative `source`, `icon`. |
 | `README.md`, `CONTRIBUTING.md` | Library-level docs: plugin table, how to add a plugin. |
 | `plugins/strict-hexagonal/` | The original skill library, now packaged as the strict-hexagonal plugin. |
 
@@ -21,6 +22,7 @@ This repo is a plugin library. The root `marketplace.json` is the ZCode plugin c
 | Path | What |
 |------|------|
 | `.zcode-plugin/plugin.json`, `.claude-plugin/plugin.json` | Plugin manifests. The manifest `version` is the single source of truth; skill frontmatters carry the same version under `metadata.version`. |
+| `assets/icon.png` | Plugin icon (512x512 PNG). Referenced by both catalogs via the `raw.githubusercontent.com/.../main/...` URL. |
 | `skills/{name}/SKILL.md` | One per skill (9 total: 6 craft, 3 process). Self-contained AI skill specs loaded by agents. |
 | `agents/{persona}.md` | 7 persona definitions (architect, smith, smith-low/med/high, surveyor, explorer). Subagent identity specs. Shipped as undeclared files: the ZCode manifest has no agents component. |
 | `benchmark/benchmark.py` | Python script evaluating AI-generated code against skill rules. |
@@ -98,7 +100,7 @@ New skills or edits must pass:
 
 ## Versioning
 
-- The strict-hexagonal plugin is at `3.0.0` (source of truth: `plugins/strict-hexagonal/.zcode-plugin/plugin.json`). Keep both manifests and skill frontmatters in sync.
+- The strict-hexagonal plugin is at `3.0.0` (source of truth: `plugins/strict-hexagonal/.zcode-plugin/plugin.json`). Keep both manifests, skill frontmatters, and the `version` on both catalog entries in sync.
 - The GitHub repository is `voidlight-labs/voidlight-plugin-library`.
 
 ## Notes
@@ -107,4 +109,4 @@ New skills or edits must pass:
 - No CI workflows. No pre-commit hooks.
 - The repo does not contain actual application code — only markdown specifications.
 - When adding a benchmark scenario, place it in the correct `plugins/strict-hexagonal/benchmark/scenarios/{lang}/` directory.
-- New plugins go in `plugins/<name>/` with an entry in the root `marketplace.json`.
+- New plugins go in `plugins/<name>/` with entries in both catalogs (root `marketplace.json` and `.claude-plugin/marketplace.json`).
